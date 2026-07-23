@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build, Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - run: npm ci
+
+      # The minified tracker (backend/internal/tracker/athar.min.js) is
+      # committed, not generated at build time. Fail if it has drifted from
+      # athar.js so the two can never silently disagree.
+      - name: Tracker up to date
+        run: node scripts/build-tracker.mjs --check
+
+      - name: JS lint
+        run: npm run lint
+
+      - run: npm run build
+
+      - name: Go vet
+        run: go vet ./backend/...
+
+      - name: Go tests
+        run: go test ./backend/...
+
+      - name: Build embedded binary
+        run: |
+          mkdir -p backend/cmd/athar/dist
+          cp -r dist/* backend/cmd/athar/dist/
+          cp -r site backend/cmd/athar/site
+          go build -tags embed_frontend -o athar ./backend/cmd/athar
+          rm -rf backend/cmd/athar/dist backend/cmd/athar/site
+
+      - name: Verify binary
+        run: ./athar --version

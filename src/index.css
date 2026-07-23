@@ -1,0 +1,106 @@
+@import 'tailwindcss';
+
+@import '@fontsource-variable/instrument-sans/index.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+/* Fonts are self-hosted, not fetched from a CDN. That is not a performance
+   choice — Athar's whole claim is that running it makes no outbound request on
+   anyone's behalf, and a webfont from fonts.gstatic.com would quietly hand every
+   dashboard visit to a third party. The CSP (font-src 'self' data:) enforces it. */
+
+@theme {
+  /* Athar's accent is amber: the family's other products own red-orange, teal
+     and lime, and heat is the right register for a tool whose signature feature
+     is a heatmap. */
+  --color-accent: #e9a23b;
+  --color-accent-soft: #c77b2e;
+
+  --color-canvas: #09090b;
+  --color-surface: #0e0e11;
+  --color-raised: #141417;
+  --color-line: #22222a;
+  --color-line-soft: #1a1a20;
+
+  --color-ink: #fafafa;
+  --color-ink-muted: #a1a1aa;
+  --color-ink-faint: #6b6b76;
+
+  --color-positive: #4ade80;
+  --color-negative: #f87171;
+
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    /* Safe areas so the installed PWA does not sit under a notch. */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* Every number in this app is either compared to another number in a column
+     or watched as it ticks. Both want fixed-width digits. */
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Respect a stated preference for less motion: the reveal animations below
+     are decoration, and decoration is never worth making someone unwell. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* A hairline grid behind the shell — enough texture to keep a dark canvas
+     from reading as a void, faint enough never to compete with the data. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--color-line) 55%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--color-line) 55%, transparent) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 30%, transparent 78%);
+  }
+
+  .reveal {
+    animation: reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

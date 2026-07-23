@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Athar</title>
+    <meta name="description" content="Self-hosted web analytics with heatmaps. Your visitors' data never leaves your server." />
+
+    <!-- The dashboard installs as a PWA: one build covers Android, iOS,
+         Windows, macOS and Linux. The collector is a server and stays on your
+         box; this is the client you pin to a home screen. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#09090B" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icon-180.png" />
+
+    <!-- Athar does not track the people who use Athar. -->
+    <meta name="robots" content="noindex" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

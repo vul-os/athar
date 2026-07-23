@@ -1,0 +1,38 @@
+node_modules/
+dist/
+backend/cmd/athar/dist/
+backend/cmd/athar/site/
+
+# Built binaries
+/athar
+/athar-*
+
+# NOTE: backend/internal/tracker/athar.min.js is deliberately COMMITTED, not
+# ignored — it is a generated artifact so a Go toolchain alone can build the
+# binary without also requiring Node. Do not add it here.
+
+# Local database files
+*.db
+*.db-wal
+*.db-shm
+
+# Live config (may hold secrets) — copy from an example file if one exists.
+athar.config.json
+
+# Environment files
+.env
+.env.*
+
+.DS_Store
+
+# Test / lint artifacts
+test-results/
+playwright-report/
+blob-report/
+
+# Local AI tool config (never commit)
+.claude/
+.cursor/
+
+# GeoIP databases — large, licensed separately, never redistributed
+*.mmdb
