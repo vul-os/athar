@@ -42,12 +42,36 @@ export function money(amountMinor, currency) {
   }
 }
 
-/** Formats a bucket timestamp for an axis label. */
-export function bucketLabel(ms, interval) {
+/**
+ * Formats a bucket timestamp.
+ *
+ * `full` is for a tooltip, where the reader wants to know exactly which bucket
+ * they are pointing at; the short form is for an axis, where labels have to fit
+ * next to each other. Deriving both from the interval rather than the caller
+ * keeps the axis and the tooltip from disagreeing about what a bucket is.
+ */
+export function bucketLabel(ms, interval, full = false) {
   const d = new Date(ms)
-  return interval === 'day'
+  const isDay = interval === 'day'
+
+  if (full) {
+    return isDay
+      ? d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+      : d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric' })
+  }
+  return isDay
     ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : d.toLocaleTimeString(undefined, { hour: 'numeric' })
+}
+
+/** Formats a signed percentage change, e.g. "+18%" / "−4%". */
+export function delta(current, previous) {
+  if (!previous) return null
+  const change = (current - previous) / previous
+  if (!Number.isFinite(change)) return null
+  const rounded = Math.round(change * 100)
+  // U+2212 MINUS SIGN, not a hyphen: it aligns with digits at this weight.
+  return { value: rounded, label: `${rounded >= 0 ? '+' : '−'}${Math.abs(rounded)}%` }
 }
 
 /** Named ranges offered by the range picker, as {from, to} in Unix ms. */

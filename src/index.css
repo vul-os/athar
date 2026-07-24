@@ -9,35 +9,88 @@
    anyone's behalf, and a webfont from fonts.gstatic.com would quietly hand every
    dashboard visit to a third party. The CSP (font-src 'self' data:) enforces it. */
 
-@theme {
-  /* Athar's accent is amber: the family's other products own red-orange, teal
-     and lime, and heat is the right register for a tool whose signature feature
-     is a heatmap. */
-  --color-accent: #e9a23b;
-  --color-accent-soft: #c77b2e;
+/* ── Theme tokens ───────────────────────────────────────────────────────────
+   Every colour below is a var() indirection so the two themes can swap the
+   underlying value at runtime. `@theme inline` is what makes that work: without
+   `inline`, Tailwind bakes the value into its own generated custom property at
+   build time and a theme switch would have no effect.
 
-  --color-canvas: #09090b;
-  --color-surface: #0e0e11;
-  --color-raised: #141417;
-  --color-line: #22222a;
-  --color-line-soft: #1a1a20;
+   The palettes are not inversions of each other. A dark UI needs its surfaces
+   to step *up* in lightness away from the canvas, while a light UI reads better
+   when panels stay near-white and separation comes from borders instead. Simply
+   flipping the dark values produces the muddy grey light mode that gives
+   "we added light mode" a bad name. */
+@theme inline {
+  --color-accent: var(--athar-accent);
+  --color-accent-soft: var(--athar-accent-soft);
+  --color-accent-wash: var(--athar-accent-wash);
 
-  --color-ink: #fafafa;
-  --color-ink-muted: #a1a1aa;
-  --color-ink-faint: #6b6b76;
+  --color-canvas: var(--athar-canvas);
+  --color-surface: var(--athar-surface);
+  --color-raised: var(--athar-raised);
+  --color-line: var(--athar-line);
+  --color-line-soft: var(--athar-line-soft);
 
-  --color-positive: #4ade80;
-  --color-negative: #f87171;
+  --color-ink: var(--athar-ink);
+  --color-ink-muted: var(--athar-ink-muted);
+  --color-ink-faint: var(--athar-ink-faint);
+
+  --color-positive: var(--athar-positive);
+  --color-negative: var(--athar-negative);
+  --color-series-2: var(--athar-series-2);
 
   --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-@layer base {
-  html {
-    color-scheme: dark;
-  }
+/* Light is the default so a first paint before JS runs is never a dark flash on
+   a light system. The inline script in index.html sets data-theme before paint. */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
 
+  --athar-accent: #b06d12;      /* darkened from the brand amber to clear 4.5:1 on white */
+  --athar-accent-soft: #8a5410;
+  --athar-accent-wash: #f5a62314;
+
+  --athar-canvas: #fbfaf9;      /* very slightly warm, so it does not glare next to amber */
+  --athar-surface: #ffffff;
+  --athar-raised: #f4f2ef;
+  --athar-line: #e4e0da;
+  --athar-line-soft: #eeebe6;
+
+  --athar-ink: #18181b;
+  --athar-ink-muted: #5c5c66;
+  --athar-ink-faint: #8b8b95;
+
+  --athar-positive: #15803d;
+  --athar-negative: #b91c1c;
+  --athar-series-2: #6b6b76;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --athar-accent: #e9a23b;      /* the brand amber, which is already legible on near-black */
+  --athar-accent-soft: #c77b2e;
+  --athar-accent-wash: #e9a23b1f;
+
+  --athar-canvas: #09090b;
+  --athar-surface: #0e0e11;
+  --athar-raised: #17171b;
+  --athar-line: #26262e;
+  --athar-line-soft: #1c1c22;
+
+  --athar-ink: #fafafa;
+  --athar-ink-muted: #a1a1aa;
+  --athar-ink-faint: #6b6b76;
+
+  --athar-positive: #4ade80;
+  --athar-negative: #f87171;
+  --athar-series-2: #8b8b95;
+}
+
+@layer base {
   body {
     background-color: var(--color-canvas);
     color: var(--color-ink);
@@ -57,7 +110,7 @@
   }
 
   ::selection {
-    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+    background: color-mix(in srgb, var(--color-accent) 26%, transparent);
   }
 
   :focus-visible {
@@ -65,8 +118,6 @@
     outline-offset: 2px;
   }
 
-  /* Respect a stated preference for less motion: the reveal animations below
-     are decoration, and decoration is never worth making someone unwell. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -79,14 +130,14 @@
 }
 
 @layer utilities {
-  /* A hairline grid behind the shell — enough texture to keep a dark canvas
-     from reading as a void, faint enough never to compete with the data. */
+  /* A hairline grid behind the sign-in screen — enough texture to keep a bare
+     canvas from reading as a void, faint enough never to compete with content. */
   .bg-grid {
     background-image:
-      linear-gradient(to right, color-mix(in srgb, var(--color-line) 55%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in srgb, var(--color-line) 55%, transparent) 1px, transparent 1px);
-    background-size: 64px 64px;
-    mask-image: radial-gradient(ellipse 90% 55% at 50% 0%, #000 30%, transparent 78%);
+      linear-gradient(to right, var(--color-line-soft) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--color-line-soft) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 85% 55% at 50% 0%, #000 25%, transparent 75%);
   }
 
   .reveal {
@@ -102,5 +153,14 @@
       opacity: 1;
       transform: none;
     }
+  }
+
+  /* Panels carry a hairline border rather than a shadow. In dark mode a shadow
+     is invisible; in light mode a heavy one looks dated. A border reads the
+     same in both. */
+  .panel {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 0.5rem;
   }
 }

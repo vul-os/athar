@@ -2,31 +2,47 @@ import { useCallback, useState } from 'react'
 import { api } from '../api.js'
 import Chart from './Chart.jsx'
 import MetricPanel from './MetricPanel.jsx'
+import StatTile from './StatTile.jsx'
+import Heatmap from './Heatmap.jsx'
 import { useAsyncData } from '../lib/useAsyncData.js'
 import { count, duration, money, percent } from '../lib/format.js'
 
-/** The per-website dashboard: headline metrics, traffic chart, breakdowns. */
+/** The per-website dashboard: headline metrics, traffic, breakdowns, heatmaps. */
 export default function Overview({ website, range }) {
   const [pageMetric, setPageMetric] = useState('path')
   const [sourceMetric, setSourceMetric] = useState('referrer')
   const [techMetric, setTechMetric] = useState('browser')
   const [placeMetric, setPlaceMetric] = useState('country')
 
-  // One loader for the three headline queries: they are always shown together,
-  // so resolving them together avoids the panel updating in three stages.
+  // One loader for everything above the breakdowns. They are always shown
+  // together, so resolving them together avoids the panel arriving in stages —
+  // and the comparison request has to be issued alongside the current one
+  // anyway, since every tile needs both to show a delta.
   const load = useCallback(async () => {
-    const [stats, series, revenue] = await Promise.all([
+    const span = range.to - range.from
+    const previousRange = { from: range.from - span, to: range.from }
+
+    const [stats, series, revenue, previousStats, previousSeries] = await Promise.all([
       api.stats(website.id, range),
       api.series(website.id, range),
       api.revenue(website.id, range),
+      api.stats(website.id, previousRange),
+      api.series(website.id, previousRange),
     ])
-    return { stats, series, revenue: revenue.totals }
+    return { stats, series, revenue: revenue.totals, previousStats, previousSeries }
   }, [website.id, range])
 
   const { data, error } = useAsyncData(load)
+
   const stats = data?.stats ?? null
+  const previous = data?.previousStats ?? null
   const series = data?.series ?? null
   const revenue = data?.revenue ?? null
+
+  // The sparkline in each tile is the same series the chart draws, so the two
+  // can never tell different stories about the same period.
+  const views = series?.points?.map((p) => p.pageviews) ?? []
+  const visitors = series?.points?.map((p) => p.visitors) ?? []
 
   if (error) {
     return (
@@ -39,20 +55,50 @@ export default function Overview({ website, range }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-5">
-        <Stat label="Visitors" value={stats && count(stats.visitors)} accent />
-        <Stat label="Pageviews" value={stats && count(stats.pageviews)} />
-        <Stat label="Sessions" value={stats && count(stats.visits)} />
-        <Stat label="Bounce rate" value={stats && percent(stats.bounce_rate)} />
-        <Stat label="Avg. visit" value={stats && duration(stats.avg_visit_seconds)} />
+        <StatTile
+          label="Visitors"
+          value={stats && count(stats.visitors)}
+          current={stats?.visitors}
+          previous={previous?.visitors}
+          series={visitors}
+          accent
+        />
+        <StatTile
+          label="Pageviews"
+          value={stats && count(stats.pageviews)}
+          current={stats?.pageviews}
+          previous={previous?.pageviews}
+          series={views}
+        />
+        <StatTile
+          label="Sessions"
+          value={stats && count(stats.visits)}
+          current={stats?.visits}
+          previous={previous?.visits}
+        />
+        <StatTile
+          label="Bounce rate"
+          value={stats && percent(stats.bounce_rate)}
+          current={stats?.bounce_rate}
+          previous={previous?.bounce_rate}
+          // A rising bounce rate is bad news, so the delta colouring flips.
+          invertDelta
+        />
+        <StatTile
+          label="Avg. visit"
+          value={stats && duration(stats.avg_visit_seconds)}
+          current={stats?.avg_visit_seconds}
+          previous={previous?.avg_visit_seconds}
+        />
       </div>
 
       {revenue?.length > 0 && (
         // Flex rather than a fixed grid: most sites report a single currency,
-        // and a five-column grid holding one tile leaves a dead grey block
-        // where the other four would be.
+        // and a five-column grid holding one tile leaves a dead block where the
+        // other four would be.
         <div className="flex flex-wrap gap-px overflow-hidden rounded-lg border border-line bg-line">
           {revenue.map((total) => (
-            <Stat
+            <StatTile
               key={total.currency}
               label={`Revenue · ${total.currency}`}
               value={money(total.amount_minor, total.currency)}
@@ -63,13 +109,19 @@ export default function Overview({ website, range }) {
         </div>
       )}
 
-      <section className="rounded-lg border border-line bg-surface p-4">
+      <section className="panel p-4">
         {series ? (
-          <Chart points={series.points} interval={series.interval} />
+          <Chart
+            points={series.points}
+            comparison={data?.previousSeries?.points}
+            interval={series.interval}
+          />
         ) : (
-          <div className="grid h-[200px] place-items-center text-sm text-ink-faint">Loading…</div>
+          <div className="grid h-[260px] place-items-center text-sm text-ink-faint">Loading…</div>
         )}
       </section>
+
+      <Heatmap website={website} range={range} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <MetricPanel
@@ -90,9 +142,11 @@ export default function Overview({ website, range }) {
           title="Sources"
           metric={sourceMetric}
           onMetricChange={setSourceMetric}
+          emptyLabel="Direct"
           tabs={[
             { metric: 'referrer', label: 'Referrers' },
             { metric: 'utm_source', label: 'Source' },
+            { metric: 'utm_medium', label: 'Medium' },
             { metric: 'utm_campaign', label: 'Campaign' },
           ]}
         />
@@ -115,6 +169,7 @@ export default function Overview({ website, range }) {
           title="Places"
           metric={placeMetric}
           onMetricChange={setPlaceMetric}
+          flags={placeMetric === 'country'}
           tabs={[
             { metric: 'country', label: 'Country' },
             { metric: 'region', label: 'Region' },
@@ -123,17 +178,6 @@ export default function Overview({ website, range }) {
           ]}
         />
         <MetricPanel websiteId={website.id} range={range} title="Custom events" metric="event" />
-      </div>
-    </div>
-  )
-}
-
-function Stat({ label, value, accent = false, className = '' }) {
-  return (
-    <div className={`bg-surface px-4 py-3 ${className}`}>
-      <div className="text-xs font-medium tracking-wide text-ink-faint uppercase">{label}</div>
-      <div className={`tnum mt-1 text-2xl font-medium ${accent ? 'text-accent' : 'text-ink'}`}>
-        {value ?? <span className="text-ink-faint">—</span>}
       </div>
     </div>
   )

@@ -18,7 +18,7 @@
 
 *Vulos — rooted in **vula**, the Zulu and Xhosa word for **open**.*
 
-![Athar dashboard](docs/screenshots/dashboard.png)
+![Athar dashboard](docs/screenshots/dashboard-dark.png)
 
 </div>
 
@@ -54,18 +54,26 @@ an analytics tool is for.
 
 <table>
 <tr>
-<td><img src="docs/screenshots/dashboard.png" alt="Athar dashboard — headline metrics, traffic chart and breakdowns" width="420"><br><em>Dashboard — visitors, pageviews, bounce rate, revenue</em></td>
-<td><img src="docs/screenshots/breakdowns.png" alt="Athar breakdown panels — pages, sources, technology and places" width="420"><br><em>Breakdowns — pages, sources, technology, places</em></td>
+<td colspan="2"><img src="docs/screenshots/heatmap-clicks-dark.png" alt="Athar click heatmap — a density field over the page with the most-clicked CSS selectors listed alongside"><br><em><strong>Click heatmap</strong> — density over the page, with the most-clicked elements listed as selectors so the map survives a redesign</em></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/heatmap-scroll.png" alt="Athar scroll-depth chart showing the share of sessions reaching each tenth of the page" width="420"><br><em>Scroll depth — how far people actually get</em></td>
+<td><img src="docs/screenshots/heatmap-attention.png" alt="Athar attention chart showing average dwell time per tenth of the page" width="420"><br><em>Attention — where they linger rather than skim</em></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/dashboard-dark.png" alt="Athar dashboard in dark mode" width="420"><br><em>Dashboard, dark</em></td>
+<td><img src="docs/screenshots/dashboard-light.png" alt="Athar dashboard in light mode" width="420"><br><em>…and light. Follows your system by default.</em></td>
 </tr>
 <tr>
 <td><img src="docs/screenshots/login.png" alt="Athar first-run setup screen" width="420"><br><em>First run — create the only account on your instance</em></td>
-<td><img src="docs/screenshots/mobile.png" alt="Athar dashboard on a phone, installable as a PWA" width="210"><br><em>The dashboard is a PWA — installable on a phone</em></td>
+<td><img src="docs/screenshots/mobile.png" alt="Athar dashboard on a phone, installable as a PWA" width="210"><br><em>Installable as a PWA</em></td>
 </tr>
 </table>
 
-> These are generated, not staged: `npm run screenshots` builds the binary,
-> boots it against a throwaway database, seeds demo traffic through the real
-> ingest endpoint, and captures the result. Re-run it after a UI change.
+> These are generated, not staged. `npm run screenshots` builds the binary,
+> generates 30 days of backdated demo traffic, boots the server against a
+> throwaway database, and drives a real browser — failing if the dashboard logs
+> a single console error. Re-run it after any UI change.
 
 ---
 

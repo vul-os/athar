@@ -4,6 +4,7 @@ import Login from './components/Login.jsx'
 import Logo from './components/Logo.jsx'
 import Overview from './components/Overview.jsx'
 import AddWebsite, { Snippet } from './components/AddWebsite.jsx'
+import ThemeToggle from './components/ThemeToggle.jsx'
 import { RANGES, count, rangeFor } from './lib/format.js'
 
 export default function App() {
@@ -174,6 +175,8 @@ function Header({ user, websites, selectedId, onSelect, onSignOut, rangeKey, onR
               </button>
             ))}
           </div>
+
+          <ThemeToggle />
 
           <button
             onClick={onSignOut}
