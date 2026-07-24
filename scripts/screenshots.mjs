@@ -40,6 +40,9 @@ const PASS = 'athar-demo-password'
 
 const BINARY = join(ROOT, process.platform === 'win32' ? 'athar.exe' : 'athar')
 
+// Which range the captures use. Override to compare options: RANGE='7 days'.
+const RANGE_LABEL = process.env.RANGE || '30 days'
+
 async function waitForServer(timeoutMs = 25000) {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
@@ -114,11 +117,14 @@ async function main() {
       // query cannot produce a screenshot of a half-loaded dashboard.
       await page.waitForSelector('text=Pageviews', { timeout: 15000 })
 
-      // Capture the 30-day view rather than the 24-hour default. A day of data
-      // is the honest default for a live instance but a poor showcase: the
-      // chart has too few buckets to show a shape, and a single page's clicks
-      // are too sparse to read as a heat field.
-      await page.getByRole('button', { name: '30 days', exact: true }).click()
+      // Capture 30 days rather than the app's 7-day default.
+      //
+      // This was chosen by comparing both: at 7 days the previous-period ghost
+      // still contains the demo dataset's spike day, and since both series
+      // share a y-axis (they must — comparing them on different scales would
+      // be a lie), the live data gets squashed into the bottom fifth of the
+      // chart. 30 days puts the spike in the live series where it belongs.
+      await page.getByRole('button', { name: RANGE_LABEL, exact: true }).click()
       await page.waitForTimeout(1800)
       return page
     }

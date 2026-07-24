@@ -83,7 +83,43 @@ export const RANGES = [
 ]
 
 export function rangeFor(key) {
-  const spec = RANGES.find((r) => r.key === key) ?? RANGES[0]
+  const spec = RANGES.find((r) => r.key === key) ?? DEFAULT_RANGE_SPEC
   const to = Date.now()
   return { from: to - spec.hours * 3600_000, to }
+}
+
+/**
+ * The range a dashboard opens on when nobody has chosen one.
+ *
+ * Seven days rather than twenty-four hours. A day is the right default for a
+ * high-traffic site, but Athar's typical instance is someone's own project on
+ * their own box, and a day of that traffic is too thin to read: the chart has
+ * few enough buckets to look like noise, and one page's clicks are too sparse
+ * to form a heat field — so the feature people install Athar for looks broken
+ * on the first visit. A week is dense enough to show shape without losing
+ * recency, and the choice is remembered after the first change anyway.
+ */
+export const DEFAULT_RANGE_KEY = '7d'
+const DEFAULT_RANGE_SPEC = RANGES.find((r) => r.key === DEFAULT_RANGE_KEY) ?? RANGES[0]
+
+const RANGE_STORAGE_KEY = 'athar-range'
+
+/** Reads the remembered range, falling back to the default. */
+export function storedRangeKey() {
+  try {
+    const value = localStorage.getItem(RANGE_STORAGE_KEY)
+    if (RANGES.some((r) => r.key === value)) return value
+  } catch {
+    // Private-browsing modes can throw; the default is fine.
+  }
+  return DEFAULT_RANGE_KEY
+}
+
+/** Remembers the chosen range, so the default only ever matters once. */
+export function persistRangeKey(key) {
+  try {
+    localStorage.setItem(RANGE_STORAGE_KEY, key)
+  } catch {
+    // Not being able to persist is not worth failing over.
+  }
 }

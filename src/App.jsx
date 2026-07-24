@@ -5,14 +5,14 @@ import Logo from './components/Logo.jsx'
 import Overview from './components/Overview.jsx'
 import AddWebsite, { Snippet } from './components/AddWebsite.jsx'
 import ThemeToggle from './components/ThemeToggle.jsx'
-import { RANGES, count, rangeFor } from './lib/format.js'
+import { RANGES, count, persistRangeKey, rangeFor, storedRangeKey } from './lib/format.js'
 
 export default function App() {
   const [boot, setBoot] = useState({ state: 'loading' })
   const [user, setUser] = useState(null)
   const [websites, setWebsites] = useState([])
   const [selectedId, setSelectedId] = useState(null)
-  const [rangeKey, setRangeKey] = useState('24h')
+  const [rangeKey, setRangeKey] = useState(storedRangeKey)
 
   // The absolute {from,to} window is derived from the named range, and memoised
   // so its identity is stable. A fresh object on every render would re-fire
@@ -62,6 +62,12 @@ export default function App() {
     return () => window.removeEventListener(SESSION_EXPIRED, onExpired)
   }, [])
 
+  // Remembering the range means the default only has to be right once.
+  const chooseRange = useCallback((key) => {
+    setRangeKey(key)
+    persistRangeKey(key)
+  }, [])
+
   async function handleSignedIn(signedInUser) {
     setUser(signedInUser)
     await loadWebsites()
@@ -104,7 +110,7 @@ export default function App() {
         onSelect={setSelectedId}
         onSignOut={handleSignOut}
         rangeKey={rangeKey}
-        onRangeChange={setRangeKey}
+        onRangeChange={chooseRange}
         websiteId={selected?.id}
       />
 
