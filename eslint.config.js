@@ -34,6 +34,18 @@ export default [
     languageOptions: { ecmaVersion: 'latest', globals: globals.node, sourceType: 'module' },
   },
 
+  // The screenshot driver is genuinely bilingual: it runs in Node, but the
+  // callbacks passed to page.evaluate() are serialised and executed inside the
+  // browser, where `window` and `document` are real.
+  {
+    files: ['scripts/screenshots.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      globals: { ...globals.node, ...globals.browser },
+      sourceType: 'module',
+    },
+  },
+
   // The service worker has its own global scope.
   {
     files: ['public/sw.js'],

@@ -18,6 +18,8 @@
 
 *Vulos — rooted in **vula**, the Zulu and Xhosa word for **open**.*
 
+![Athar dashboard](docs/screenshots/dashboard.png)
+
 </div>
 
 ---
@@ -45,6 +47,25 @@ The name is Arabic أثر — "trace" and "impact" at once, which is roughly wha
 an analytics tool is for.
 
 [GitHub](https://github.com/vul-os/athar) · [Quick start](#quick-start) · [Docs](#documentation) · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md)
+
+---
+
+## Screenshots
+
+<table>
+<tr>
+<td><img src="docs/screenshots/dashboard.png" alt="Athar dashboard — headline metrics, traffic chart and breakdowns" width="420"><br><em>Dashboard — visitors, pageviews, bounce rate, revenue</em></td>
+<td><img src="docs/screenshots/breakdowns.png" alt="Athar breakdown panels — pages, sources, technology and places" width="420"><br><em>Breakdowns — pages, sources, technology, places</em></td>
+</tr>
+<tr>
+<td><img src="docs/screenshots/login.png" alt="Athar first-run setup screen" width="420"><br><em>First run — create the only account on your instance</em></td>
+<td><img src="docs/screenshots/mobile.png" alt="Athar dashboard on a phone, installable as a PWA" width="210"><br><em>The dashboard is a PWA — installable on a phone</em></td>
+</tr>
+</table>
+
+> These are generated, not staged: `npm run screenshots` builds the binary,
+> boots it against a throwaway database, seeds demo traffic through the real
+> ingest endpoint, and captures the result. Re-run it after a UI change.
 
 ---
 
@@ -427,6 +448,6 @@ ecommerce analytics, GDPR-friendly analytics, single binary analytics, open sour
 ---
 
 <p align="center">
-  <a href="https://vulos.org"><b>vulos</b></a><br>
-  <sub><a href="https://vulos.org">vulos.org</a> — open by design</sub>
+  <a href="https://vulos.org"><img src="docs/assets/vulos-logo.png" alt="vulos" height="20"></a><br>
+  <sub><a href="https://vulos.org"><b>vulos</b></a> — open by design</sub>
 </p>

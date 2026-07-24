@@ -47,13 +47,17 @@ export default function Overview({ website, range }) {
       </div>
 
       {revenue?.length > 0 && (
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-5">
+        // Flex rather than a fixed grid: most sites report a single currency,
+        // and a five-column grid holding one tile leaves a dead grey block
+        // where the other four would be.
+        <div className="flex flex-wrap gap-px overflow-hidden rounded-lg border border-line bg-line">
           {revenue.map((total) => (
             <Stat
               key={total.currency}
               label={`Revenue · ${total.currency}`}
               value={money(total.amount_minor, total.currency)}
               accent
+              className="min-w-[12rem] flex-1"
             />
           ))}
         </div>
@@ -124,9 +128,9 @@ export default function Overview({ website, range }) {
   )
 }
 
-function Stat({ label, value, accent = false }) {
+function Stat({ label, value, accent = false, className = '' }) {
   return (
-    <div className="bg-surface px-4 py-3">
+    <div className={`bg-surface px-4 py-3 ${className}`}>
       <div className="text-xs font-medium tracking-wide text-ink-faint uppercase">{label}</div>
       <div className={`tnum mt-1 text-2xl font-medium ${accent ? 'text-accent' : 'text-ink'}`}>
         {value ?? <span className="text-ink-faint">—</span>}
