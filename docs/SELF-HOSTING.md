@@ -33,7 +33,7 @@ Once traffic reaches Athar over HTTPS via the proxy:
 - Run Athar with `--secure-cookies` so the session and CSRF cookies are
   marked `Secure`.
 
-## Option 2: a tunnel (cloudflared, ngrok, Vulos Relay)
+## Option 2: a tunnel (cloudflared, ngrok, Ephor)
 
 A tunnel dials *out* from the machine running Athar, so nothing needs to be
 opened inbound on that machine's network — useful behind NAT, on a home

@@ -27,7 +27,7 @@ type Config struct {
 	//
 	// This default is deliberately restrictive even though Athar must receive
 	// beacons from the internet to be useful. The intended path to public
-	// reachability is a tunnel (cloudflared, ngrok, Vulos Relay) or a reverse
+	// reachability is a tunnel (cloudflared, ngrok, Ephor) or a reverse
 	// proxy, both of which reach loopback. Anyone who genuinely wants to bind
 	// 0.0.0.0 can say so; nobody should do it by accident.
 	Host string `json:"host,omitempty"`

@@ -42,7 +42,7 @@ Durations (`session_window`, `session_ttl`) are Go duration strings in the JSON 
 
 ### `host` & `port`
 
-`host` defaults to `127.0.0.1` — loopback only — even though Athar has to receive beacons from the internet to be useful. That default is deliberate: the intended path to public reachability is a tunnel (cloudflared, ngrok, Vulos Relay) or a reverse proxy, both of which reach loopback fine. Binding `0.0.0.0` is something an operator should say explicitly, not something that happens by accident of a default.
+`host` defaults to `127.0.0.1` — loopback only — even though Athar has to receive beacons from the internet to be useful. That default is deliberate: the intended path to public reachability is a tunnel (cloudflared, ngrok, Ephor) or a reverse proxy, both of which reach loopback fine. Binding `0.0.0.0` is something an operator should say explicitly, not something that happens by accident of a default.
 
 ### `trust_proxy_headers`
 

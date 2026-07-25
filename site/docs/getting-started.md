@@ -34,7 +34,7 @@ Put it in your site's `<head>`, or anywhere before `</body>`. It's the whole int
 
 Athar binds `127.0.0.1` by default, which means it isn't reachable from the internet until you point something at it. That's deliberate — see [Configuration](./configuration.md#host--port). The two normal ways to get beacons flowing from a real site:
 
-- a tunnel (cloudflared, ngrok, Vulos Relay) pointed at `127.0.0.1:3100`
+- a tunnel (cloudflared, ngrok, Ephor) pointed at `127.0.0.1:3100`
 - a reverse proxy (nginx, Caddy) terminating TLS and forwarding to loopback
 
 Either way, once traffic reaches Athar over a proxy, set `trust_proxy_headers` correctly — see [Configuration](./configuration.md#trust_proxy_headers) before you do.

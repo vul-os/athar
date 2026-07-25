@@ -120,7 +120,7 @@ on infrastructure you control:
   changes; see [docs/DEPLOYMENT-POSTGRES.md](docs/DEPLOYMENT-POSTGRES.md).
 - **Behind a tunnel or reverse proxy** — Athar binds loopback by default and
   is meant to be reached through [cloudflared](https://github.com/cloudflare/cloudflared),
-  [ngrok](https://ngrok.com), your own [Vulos Relay](https://github.com/vul-os/vulos-relay)
+  [ngrok](https://ngrok.com), your own [Ephor](https://github.com/vul-os/ephor)
   server, or a conventional reverse proxy (nginx, Caddy) terminating TLS in
   front of it. See [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md).
 - **Embedded behind an iframe host** — set `frame_ancestors` so a host shell
@@ -352,7 +352,7 @@ seam is what makes this a config change instead of a fork. See
 **Reaching Athar from the internet** — it binds `127.0.0.1` by default, so a
 collector endpoint that must receive beacons from the public internet still
 starts out unreachable from anywhere but the box it's on. The intended path
-is a tunnel (cloudflared, ngrok, your own Vulos Relay server) or a reverse
+is a tunnel (cloudflared, ngrok, your own Ephor server) or a reverse
 proxy in front of it — both reach loopback without ever binding Athar itself
 to `0.0.0.0`. See [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md).
 
