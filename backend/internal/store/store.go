@@ -143,16 +143,16 @@ const (
 
 // Event is a single pageview or custom event.
 type Event struct {
-	ID         string
-	WebsiteID  string
-	VisitID    string
-	Type       EventType
-	Name       string // custom event name; empty for pageviews
-	URLPath    string
-	URLQuery   string
-	Referrer   string // full referrer path for on-site navigation
-	PageTitle  string
-	CreatedAt  time.Time
+	ID        string
+	WebsiteID string
+	VisitID   string
+	Type      EventType
+	Name      string // custom event name; empty for pageviews
+	URLPath   string
+	URLQuery  string
+	Referrer  string // full referrer path for on-site navigation
+	PageTitle string
+	CreatedAt time.Time
 }
 
 // EventDatum is one key/value property attached to a custom event. Values are
@@ -267,22 +267,22 @@ const (
 
 // Metric names accepted by Store.TopMetrics.
 const (
-	MetricPath       = "path"
-	MetricEntryPath  = "entry_path"
-	MetricExitPath   = "exit_path"
-	MetricReferrer   = "referrer"
-	MetricBrowser    = "browser"
-	MetricOS         = "os"
-	MetricDevice     = "device"
-	MetricScreen     = "screen"
-	MetricLanguage   = "language"
-	MetricCountry    = "country"
-	MetricRegion     = "region"
-	MetricCity       = "city"
-	MetricUTMSource  = "utm_source"
-	MetricUTMMedium  = "utm_medium"
+	MetricPath        = "path"
+	MetricEntryPath   = "entry_path"
+	MetricExitPath    = "exit_path"
+	MetricReferrer    = "referrer"
+	MetricBrowser     = "browser"
+	MetricOS          = "os"
+	MetricDevice      = "device"
+	MetricScreen      = "screen"
+	MetricLanguage    = "language"
+	MetricCountry     = "country"
+	MetricRegion      = "region"
+	MetricCity        = "city"
+	MetricUTMSource   = "utm_source"
+	MetricUTMMedium   = "utm_medium"
 	MetricUTMCampaign = "utm_campaign"
-	MetricEvent      = "event"
+	MetricEvent       = "event"
 )
 
 // ── The seam ──────────────────────────────────────────────────────────────────

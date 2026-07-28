@@ -128,7 +128,7 @@ func TestWebsiteAccess(t *testing.T) {
 	}
 }
 
-// Sharing is off by default (share_id = ''), and the empty-string lookup must
+// Sharing is off by default (share_id = ”), and the empty-string lookup must
 // never resolve — otherwise every unshared site would be publicly readable.
 func TestEmptyShareIDNeverResolves(t *testing.T) {
 	ctx := context.Background()
@@ -383,7 +383,7 @@ func TestRebindDollar(t *testing.T) {
 }
 
 // The schema's comments contain semicolons and nearly every column carries a
-// DEFAULT '' literal, so the migration splitter has to know about both.
+// DEFAULT ” literal, so the migration splitter has to know about both.
 func TestSplitStatements(t *testing.T) {
 	body := `
 -- a comment; with a semicolon in it

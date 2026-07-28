@@ -27,12 +27,16 @@ const CSRFCookie = "athar_csrf"
 const CSRFHeader = "X-Athar-CSRF"
 
 // Errors returned by the session layer.
+//
+// Every value here is returned by something in this package. TOTP sentinels
+// used to sit alongside these, declared but never returned by any code path —
+// which made the login flow look two-factor-aware when it is not. The
+// enrolment work is tracked in ROADMAP.md; its sentinels belong in the commit
+// that first returns them, not before.
 var (
-	ErrNoSession       = errors.New("auth: no session")
-	ErrInvalidLogin    = errors.New("auth: invalid credentials")
-	ErrRateLimited     = errors.New("auth: too many attempts")
-	ErrTOTPRequired    = errors.New("auth: TOTP code required")
-	ErrTOTPInvalid     = errors.New("auth: invalid TOTP code")
+	ErrNoSession    = errors.New("auth: no session")
+	ErrInvalidLogin = errors.New("auth: invalid credentials")
+	ErrRateLimited  = errors.New("auth: too many attempts")
 )
 
 // Manager issues and validates dashboard sessions.

@@ -99,7 +99,7 @@ export function rangeFor(key) {
  * on the first visit. A week is dense enough to show shape without losing
  * recency, and the choice is remembered after the first change anyway.
  */
-export const DEFAULT_RANGE_KEY = '7d'
+const DEFAULT_RANGE_KEY = '7d'
 const DEFAULT_RANGE_SPEC = RANGES.find((r) => r.key === DEFAULT_RANGE_KEY) ?? RANGES[0]
 
 const RANGE_STORAGE_KEY = 'athar-range'

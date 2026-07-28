@@ -44,11 +44,23 @@ npm run build:all
 make check
 ```
 
-which runs, in order: `go build ./backend/...`, `go vet ./backend/...`,
-`go test ./backend/...`, a check that the committed
-`backend/internal/tracker/athar.min.js` matches
-`athar.js` (`node scripts/build-tracker.mjs --check`), `npm run lint`, and
-`npm run build`.
+which runs, in order: `gofmt -l backend/` (any output fails the gate),
+`go build ./backend/...`, `go vet ./backend/...`, `go test ./backend/...`, a
+check that the committed `backend/internal/tracker/athar.min.js` matches
+`athar.js` (`node scripts/build-tracker.mjs --check`), `npm run lint`,
+`npm test` (vitest), and `npm run build`.
+
+Both scoped gates are worth knowing the shape of. `gofmt -l` exits 0 whether
+or not it found unformatted files, so the gate tests its *output*, not its
+status. `vitest run` exits 1 when it matches no test files, so the JS test
+step cannot pass by running nothing — and each test module asserts that every
+export of the module it covers is named in its own exercised-set, so adding
+an export without a test fails the suite instead of quietly widening the
+untested surface.
+
+Note the gates are scoped to `./backend/...`, not `./...`: the Go tool walks
+`node_modules/`, which contains a vendored Go package (`flatted`) that is not
+Athar's code.
 
 ## Branch and PR Conventions
 
@@ -73,9 +85,11 @@ chore: bump modernc.org/sqlite to 1.51
 Before opening a PR:
 
 ```bash
+gofmt -l backend/          # must print nothing
 go test ./backend/...
 go vet ./backend/...
 npm run lint
+npm test
 npm run build
 node scripts/build-tracker.mjs --check
 ```

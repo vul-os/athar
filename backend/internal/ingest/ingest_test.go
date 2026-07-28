@@ -11,54 +11,54 @@ import (
 
 func TestParseUserAgent(t *testing.T) {
 	cases := []struct {
-		name              string
-		ua                string
-		browser, os, dev  string
-		bot               bool
+		name             string
+		ua               string
+		browser, os, dev string
+		bot              bool
 	}{
 		{
-			name: "chrome on macos",
-			ua:   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36",
+			name:    "chrome on macos",
+			ua:      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36",
 			browser: "Chrome", os: "macOS", dev: DeviceDesktop,
 		},
 		{
 			// Safari's UA contains neither "Chrome" nor anything distinctive
 			// except the absence of everything else — the ordering of the rules
 			// is what makes this come out right.
-			name: "safari on macos",
-			ua:   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+			name:    "safari on macos",
+			ua:      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
 			browser: "Safari", os: "macOS", dev: DeviceDesktop,
 		},
 		{
 			// Edge claims to be Chrome and Safari; the Edg/ token must win.
-			name: "edge is not chrome",
-			ua:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36 Edg/131.0",
+			name:    "edge is not chrome",
+			ua:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36 Edg/131.0",
 			browser: "Edge", os: "Windows", dev: DeviceDesktop,
 		},
 		{
-			name: "opera is not chrome",
-			ua:   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36 OPR/117.0",
+			name:    "opera is not chrome",
+			ua:      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36 OPR/117.0",
 			browser: "Opera", os: "Windows", dev: DeviceDesktop,
 		},
 		{
-			name: "firefox on linux",
-			ua:   "Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0",
+			name:    "firefox on linux",
+			ua:      "Mozilla/5.0 (X11; Linux x86_64; rv:133.0) Gecko/20100101 Firefox/133.0",
 			browser: "Firefox", os: "Linux", dev: DeviceDesktop,
 		},
 		{
-			name: "chrome on android phone",
-			ua:   "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Mobile Safari/537.36",
+			name:    "chrome on android phone",
+			ua:      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Mobile Safari/537.36",
 			browser: "Chrome", os: "Android", dev: DeviceMobile,
 		},
 		{
 			// An Android tablet omits "Mobile" from the token.
-			name: "android tablet",
-			ua:   "Mozilla/5.0 (Linux; Android 14; SM-X200) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36",
+			name:    "android tablet",
+			ua:      "Mozilla/5.0 (Linux; Android 14; SM-X200) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36",
 			browser: "Chrome", os: "Android", dev: DeviceTablet,
 		},
 		{
-			name: "safari on iphone",
-			ua:   "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+			name:    "safari on iphone",
+			ua:      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
 			browser: "Safari", os: "iOS", dev: DeviceMobile,
 		},
 		{name: "googlebot", ua: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", bot: true},
@@ -115,8 +115,8 @@ func TestDeviceFromScreen(t *testing.T) {
 
 func TestParseReferrer(t *testing.T) {
 	cases := []struct {
-		name              string
-		raw, hostname     string
+		name               string
+		raw, hostname      string
 		external, internal string
 	}{
 		{"external", "https://news.ycombinator.com/item?id=1", "example.com", "news.ycombinator.com", ""},
@@ -163,11 +163,11 @@ func TestParseUTMAndSplitURL(t *testing.T) {
 
 func TestNormalizeLanguage(t *testing.T) {
 	cases := map[string]string{
-		"en-GB":                "en-GB",
-		"en-gb":                "en-GB",
-		"EN":                   "en",
+		"en-GB":                   "en-GB",
+		"en-gb":                   "en-GB",
+		"EN":                      "en",
 		"en-US,en;q=0.9,fr;q=0.8": "en-US", // a weighted list collapses to its first tag
-		"":                     "",
+		"":                        "",
 	}
 	for in, want := range cases {
 		if got := normalizeLanguage(in); got != want {

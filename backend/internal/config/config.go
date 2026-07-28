@@ -61,8 +61,8 @@ type Config struct {
 	SessionTTL Duration `json:"session_ttl,omitempty"`
 
 	// RetentionDays deletes collected data older than N days. 0 (default)
-	// keeps data forever. Retention runs daily and deletes whole visitor
-	// sessions, so no orphaned events are left behind.
+	// keeps data forever. The sweep runs hourly (and once at boot) and deletes
+	// whole visitor sessions, so no orphaned events are left behind.
 	RetentionDays int `json:"retention_days,omitempty"`
 
 	// TrustProxyHeaders makes Athar read the client IP from X-Forwarded-For /

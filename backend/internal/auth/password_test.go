@@ -55,16 +55,16 @@ func TestHashesAreSalted(t *testing.T) {
 // a corrupt database column into an authentication bypass.
 func TestMalformedHashesFailClosed(t *testing.T) {
 	cases := map[string]string{
-		"empty":             "",
-		"not PHC":           "hunter2",
-		"too few fields":    "$argon2id$v=19$m=65536,t=2,p=4$c2FsdA",
-		"wrong variant":     "$argon2i$v=19$m=65536,t=2,p=4$c2FsdA$aGFzaA",
-		"unknown version":   "$argon2id$v=13$m=65536,t=2,p=4$c2FsdA$aGFzaA",
-		"zero memory":       "$argon2id$v=19$m=0,t=2,p=4$c2FsdA$aGFzaA",
-		"bad base64 salt":   "$argon2id$v=19$m=65536,t=2,p=4$!!!!$aGFzaA",
-		"bad base64 hash":   "$argon2id$v=19$m=65536,t=2,p=4$c2FsdA$!!!!",
-		"empty hash":        "$argon2id$v=19$m=65536,t=2,p=4$c2FsdA$",
-		"garbage params":    "$argon2id$v=19$nonsense$c2FsdA$aGFzaA",
+		"empty":           "",
+		"not PHC":         "hunter2",
+		"too few fields":  "$argon2id$v=19$m=65536,t=2,p=4$c2FsdA",
+		"wrong variant":   "$argon2i$v=19$m=65536,t=2,p=4$c2FsdA$aGFzaA",
+		"unknown version": "$argon2id$v=13$m=65536,t=2,p=4$c2FsdA$aGFzaA",
+		"zero memory":     "$argon2id$v=19$m=0,t=2,p=4$c2FsdA$aGFzaA",
+		"bad base64 salt": "$argon2id$v=19$m=65536,t=2,p=4$!!!!$aGFzaA",
+		"bad base64 hash": "$argon2id$v=19$m=65536,t=2,p=4$c2FsdA$!!!!",
+		"empty hash":      "$argon2id$v=19$m=65536,t=2,p=4$c2FsdA$",
+		"garbage params":  "$argon2id$v=19$nonsense$c2FsdA$aGFzaA",
 	}
 
 	for name, hash := range cases {

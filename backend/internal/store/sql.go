@@ -99,9 +99,9 @@ func tunePool(db *sql.DB, engine string) {
 	db.SetConnMaxLifetime(time.Hour)
 }
 
-func (s *sqlStore) Dialect() string                  { return s.dialect.Name() }
-func (s *sqlStore) Close() error                     { return s.db.Close() }
-func (s *sqlStore) Ping(ctx context.Context) error   { return s.db.PingContext(ctx) }
+func (s *sqlStore) Dialect() string                   { return s.dialect.Name() }
+func (s *sqlStore) Close() error                      { return s.db.Close() }
+func (s *sqlStore) Ping(ctx context.Context) error    { return s.db.PingContext(ctx) }
 func (s *sqlStore) Migrate(ctx context.Context) error { return s.migrate(ctx) }
 
 // q rebinds a `?`-style query for the active engine.

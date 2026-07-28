@@ -92,7 +92,7 @@ func (s *sqlStore) applyMigration(ctx context.Context, m migration) error {
 // splitStatements breaks a migration body into individual statements on `;`,
 // ignoring semicolons that appear inside `--` line comments or single-quoted
 // string literals. Both occur in the schema — the comments explain the design,
-// and DEFAULT '' appears on most columns — so a plain strings.Split would cut
+// and DEFAULT ” appears on most columns — so a plain strings.Split would cut
 // statements in half.
 //
 // This is a lexer, not a parser: it only needs to know where a statement ends,

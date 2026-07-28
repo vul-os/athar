@@ -46,7 +46,9 @@ Everything privacy-relevant about Athar is decided in this one path: no cookie i
 
 ## Frontend
 
-A React dashboard (Vite build) covers reporting, heatmap viewing, website and user management, and settings. It's a static bundle embedded in the binary and served at `/`; it talks only to the JSON API described in [API](./api.md) — there's no server-rendering step and no separate frontend deploy.
+A React dashboard (Vite build) covers first-run setup and login, the reporting overview, the click/scroll/attention heatmap views, and adding a website. It's a static bundle embedded in the binary and served at `/`; it talks only to the JSON API described in [API](./api.md) — there's no server-rendering step and no separate frontend deploy.
+
+The API is deliberately wider than the dashboard: user administration, password change, share-link minting and website deletion are all implemented and enforced server-side but have no screen yet. See [Roadmap](./roadmap.md) — treat any endpoint in [API](./api.md) that isn't listed above as request-only for now.
 
 ## What "self-hosted" means structurally
 

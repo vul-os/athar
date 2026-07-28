@@ -73,8 +73,17 @@ function qs(params) {
   return str ? `?${str}` : ''
 }
 
+/**
+ * The endpoints the dashboard actually calls.
+ *
+ * Deliberately not a mirror of the server's route table. Athar's API is larger
+ * than its UI — `GET /api/health`, `POST /api/websites/{id}/share` and
+ * `DELETE /api/websites/{id}` are all implemented, tested and documented
+ * (site/docs/api.md), but no screen calls them yet (ROADMAP.md, "Website
+ * settings UI"). Wrappers for them lived here unreferenced, which reads as a
+ * UI that exists somewhere; a method belongs here when a component calls it.
+ */
 export const api = {
-  health: () => get('/api/health'),
   authStatus: () => get('/api/auth/status'),
   login: (username, password) => post('/api/auth/login', { username, password }),
   bootstrap: (username, password) => post('/api/auth/bootstrap', { username, password }),
@@ -83,8 +92,6 @@ export const api = {
 
   websites: () => get('/api/websites'),
   createWebsite: (name, domain) => post('/api/websites', { name, domain }),
-  deleteWebsite: (id) => request('DELETE', `/api/websites/${id}`),
-  setShare: (id, enabled) => post(`/api/websites/${id}/share`, { enabled }),
 
   stats: (id, range) => get(`/api/websites/${id}/stats${qs(range)}`),
   series: (id, range) => get(`/api/websites/${id}/series${qs(range)}`),

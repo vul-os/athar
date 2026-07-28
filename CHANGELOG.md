@@ -9,7 +9,45 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- **`GET /api/health` no longer fingerprints the instance to anonymous
+  callers.** The public response is now `{ ok }` — liveness and database
+  reachability. `version` and `store` are still returned, but only to an
+  authenticated caller. The build version tells a scanner which advisories
+  apply to a box, and the engine name (`"sqlite"` / `"postgres"`) is the
+  Store seam's internal vocabulary, which nothing outside the binary should
+  be branching on. Monitoring that checks `ok` or the status code is
+  unaffected; anything parsing `version` off the public endpoint must
+  authenticate.
+
+### Removed
+
+- `auth.ErrTOTPRequired` and `auth.ErrTOTPInvalid` — declared but returned by
+  no code path, which made the login flow read as two-factor-aware when it is
+  not. TOTP remains persistence-only scaffolding; see
+  [ROADMAP.md](ROADMAP.md#near-term).
+- Unreferenced dashboard API-client wrappers (`api.health`, `api.setShare`,
+  `api.deleteWebsite`). The endpoints themselves are unchanged, implemented
+  and tested; no dashboard screen calls them yet.
+
+### Fixed
+
+- Documentation reconciled with the code: the retention sweep is hourly, not
+  daily; `frame_ancestors` always emits a CSP `frame-ancestors` directive;
+  the heatmap dashboard view shipped in 0.1.0 (only the screenshot underlay
+  is outstanding); and share links, website deletion, password change and
+  user administration are marked API-only, since the dashboard has no screen
+  for them.
+
+### Internal
+
+- `make check` and CI now gate on `gofmt -l backend/` and on `npm test`
+  (vitest). The formatting gate tests gofmt's *output* rather than its exit
+  status, which is always 0; the JS gate cannot pass by running nothing,
+  because vitest exits 1 on zero matched test files and each test module
+  asserts it covers every export of the module under test. 34 frontend tests
+  added for `src/lib/format.js` and `src/lib/countries.js`.
 
 ---
 

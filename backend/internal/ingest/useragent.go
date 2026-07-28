@@ -20,11 +20,11 @@ type browserRule struct{ token, name string }
 var browserRules = []browserRule{
 	// Chromium forks all contain "Chrome", so they must precede it.
 	{"YaBrowser", "Yandex"},
-	{"Edg/", "Edge"},        // modern Edge; "Edge/" was the legacy EdgeHTML one
-	{"EdgA/", "Edge"},       // Android
-	{"EdgiOS/", "Edge"},     // iOS
-	{"OPR/", "Opera"},       // Chromium-era Opera
-	{"Opera", "Opera"},      // Presto-era
+	{"Edg/", "Edge"},    // modern Edge; "Edge/" was the legacy EdgeHTML one
+	{"EdgA/", "Edge"},   // Android
+	{"EdgiOS/", "Edge"}, // iOS
+	{"OPR/", "Opera"},   // Chromium-era Opera
+	{"Opera", "Opera"},  // Presto-era
 	{"Vivaldi", "Vivaldi"},
 	{"Brave", "Brave"},
 	{"SamsungBrowser", "Samsung Internet"},

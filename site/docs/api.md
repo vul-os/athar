@@ -13,7 +13,7 @@ Athar's dashboard talks to itself over a REST API, which is also yours to use. T
 Login issues two cookies: `athar_session` (httpOnly, the real credential — only a SHA-256 hash of its value is stored server-side) and `athar_csrf` (readable by JavaScript on purpose). For any non-`GET`/`HEAD`/`OPTIONS` request to an authenticated route, echo the CSRF cookie's value back in the **`X-Athar-CSRF`** header — a request missing it or carrying a mismatched value gets `403`. This is checked in shared middleware ahead of every handler, so a new authenticated route is protected by construction, not by remembering to add a check to it.
 
 ### `GET /api/health`
-Public. `{ ok, version, store }`. Returns `503` if the database is unreachable.
+Public. `{ ok }` — liveness and database reachability, and deliberately nothing more: the build version and the storage engine are fingerprints, so an anonymous caller gets neither. Returns `503` if the database is unreachable. An **authenticated** caller gets `{ ok, version, store }`.
 
 ### `POST /api/auth/login`
 Public, rate-limited on username **and** client address together (guessing at one known account, or spraying one password across many accounts, both hit a limit). Body: `{ username, password }`. `401` with the same message for "no such user" and "wrong password" — telling them apart is a username oracle.

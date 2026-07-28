@@ -105,6 +105,17 @@ func (a *API) Register(mux *http.ServeMux) {
 
 // ── Health & auth ─────────────────────────────────────────────────────────────
 
+// handleHealth is the liveness probe. It is public, so it answers the one
+// question a probe actually asks — is this instance serving and is its database
+// reachable — and nothing else.
+//
+// The build version and the storage engine are reported only to an
+// authenticated caller. Both are fingerprints: the version tells an anonymous
+// scanner which advisories apply to this box, and the engine name is the Store
+// seam's own internal vocabulary ("sqlite" / "postgres"), which nothing outside
+// the binary has any business depending on. Publishing it invites a client to
+// branch on the operator's database choice, which is exactly the coupling the
+// seam exists to prevent.
 func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 	if err := a.store.Ping(r.Context()); err != nil {
 		auth.WriteJSON(w, http.StatusServiceUnavailable, map[string]any{
@@ -112,11 +123,12 @@ func (a *API) handleHealth(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	auth.WriteJSON(w, http.StatusOK, map[string]any{
-		"ok":      true,
-		"version": a.version,
-		"store":   a.store.Dialect(),
-	})
+	body := map[string]any{"ok": true}
+	if user, err := a.sessions.Authenticate(r.Context(), r); err == nil && user != nil {
+		body["version"] = a.version
+		body["store"] = a.store.Dialect()
+	}
+	auth.WriteJSON(w, http.StatusOK, body)
 }
 
 // handleAuthStatus tells the dashboard whether to show a login form or a

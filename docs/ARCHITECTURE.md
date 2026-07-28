@@ -53,6 +53,38 @@ literally (`TEXT`, `INTEGER`, `BIGINT`, `DOUBLE PRECISION`,
 third engine means writing a `Dialect` and, if the schema needs it, a new
 migration — not a second `Store` implementation.
 
+### What makes this a seam and not just an interface
+
+Three rules, and a seam that breaks any of them stops being one. They are
+restated here rather than imported from anywhere, because a shared *paragraph*
+costs nothing and a shared *package* would couple every product that used it:
+
+1. **The seam depends on nothing.** `backend/internal/store` imports the
+   standard library and two database drivers, and nothing of Athar's. Nothing
+   in it knows about beacons, sessions, heatmaps or HTTP — it knows about rows.
+   A seam that imports the thing it is a seam for is a layering diagram, not a
+   boundary.
+2. **The default implementation works with zero external services.** `./athar`
+   with no configuration opens a SQLite file. There is no service to stand up,
+   no daemon, no account, no network call. Postgres is an *option* someone
+   opts into by writing a DSN — the shape that needs infrastructure is never
+   the shape you get by default.
+3. **No provider name inside a type the seam exports.** Naming a specific
+   engine in a method signature, a field, or a wire response exports that
+   provider's jurisdiction to everyone downstream: every caller who branches on
+   it, and every future implementation, now has to care which product Athar's
+   operator chose. `Store.Dialect()` returns an engine string, which is the one
+   place this could leak; it exists so the process can log what it opened, and
+   it is deliberately not published to unauthenticated callers — see
+   `handleHealth` in `backend/internal/api/api.go`, where the engine name and
+   the build version are reported only to a logged-in operator.
+
+The same three rules are why `geoip.Resolver` looks the way it does: its zero
+value is a working resolver that returns an empty `Location`, so "no database
+configured" is the ordinary path rather than an error case, and the alternative
+every hosted analytics product reaches for — a geolocation API call — would
+have broken rule 2 outright.
+
 ### Two portability rules
 
 Keeping one schema honest across two engines depends on two rules, and both

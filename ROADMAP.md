@@ -44,9 +44,16 @@ Verified end-to-end (collector → store → dashboard) before release:
   limiting keyed on username *and* client address, per-website roles
   (owner/editor/viewer) layered on instance roles (admin/user). Fail-closed
   throughout.
+- **The heatmap dashboard view** — click, scroll-depth and attention modes,
+  with a page picker driven by the top-pages metric. The click map is drawn
+  as a density field on a proportional frame with the clicked elements listed
+  beside it as CSS selectors; there is deliberately no page screenshot under
+  it (see Near-term below, and the Non-goals).
 - **Public share links** — an unguessable id serves read-only summary stats
   for one website with no login; re-enabling sharing mints a fresh id, so
-  disabling it is a real revocation.
+  disabling it is a real revocation. **Server-side and API-only**: mint and
+  revoke via `POST /api/websites/{id}/share`; the dashboard has no toggle for
+  it yet (Near-term below).
 - **Retention** — deletes whole visitor sessions (cascading to their events,
   heatmap samples and revenue rows) past a configurable age, so no
   orphaned rows skew a later bounce-rate calculation.
@@ -61,22 +68,36 @@ Verified end-to-end (collector → store → dashboard) before release:
 
 Genuinely unfinished, prioritised roughly by how often it's asked for:
 
-- **Heatmap overlay rendering UI** — the collector and the `/api/websites/{id}/heatmap`
-  endpoint already return raw click/scroll/attention samples; the dashboard
-  visualisation that overlays them on a page screenshot is not built yet.
+- **Heatmap-over-screenshot underlay** — the heatmap view itself shipped in
+  0.1.0 (above): it renders the density field, the scroll drop-off curve and
+  the attention bands from `/api/websites/{id}/heatmap`. What is *not* built
+  is drawing that field over a picture of the page, because Athar's tracker
+  captures no DOM snapshot to draw one from. That needs a separate, opt-in
+  capture path — see Later/exploratory and Non-goals.
+- **Website settings UI** — enabling/revoking a share link
+  (`POST /api/websites/{id}/share`) and deleting a website
+  (`DELETE /api/websites/{id}`) are enforced and tested server-side, but the
+  dashboard has no screen for either; both are API-only today.
 - **Funnels** — including a cart/checkout funnel for the ecommerce data
   Athar already collects (revenue events exist; funnel *analysis* of them
   does not).
 - **Segmentation / filtering UI** — slicing a report by browser, country,
   referrer, etc. from the dashboard, rather than one metric at a time via
   the API.
-- **TOTP two-factor enrolment.** `store.User.TOTPSecret` and the
-  `ErrTOTPRequired` / `ErrTOTPInvalid` error values already exist in the
-  auth package; the enrolment flow (QR code, secret generation, verification
-  step in login) does not.
+- **TOTP two-factor enrolment.** What exists today is persistence only:
+  the `users.totp_secret` column, `store.UpdateUserTOTP`, and `GET /api/me`
+  reporting `totp: false`. Nothing generates, stores or verifies a code —
+  the login path has no second factor at any point. The enrolment flow (QR
+  code, secret generation, verification step in login) is entirely unbuilt.
 - **Teams UI** — per-website roles already exist in the schema and are
   enforced server-side (`WebsiteAccess`, `website_users`); there is no
   dashboard screen yet to invite a user onto a website or manage their role.
+- **Account & user administration UI** — changing your own password
+  (`POST /api/me/password`) and the admin user CRUD (`GET`/`POST /api/users`,
+  `DELETE /api/users/{id}`) are implemented, authenticated and tested, but
+  nothing in the dashboard calls them. The React app today is: first-run
+  setup, login, the reporting overview, the heatmap views, and adding a
+  website.
 - **Data export / import.**
 - **Browser end-to-end tests** driving the actual production bundle, the way
   the sibling Vulos products do.

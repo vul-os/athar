@@ -206,6 +206,37 @@ func TestHealthAndBootstrapFlow(t *testing.T) {
 	}
 }
 
+// The public health probe must answer liveness and nothing else. The build
+// version tells an anonymous scanner which advisories apply to this box, and
+// the storage engine is the Store seam's private vocabulary — neither belongs
+// in a response anyone on the internet can fetch.
+func TestPublicHealthDoesNotFingerprintTheInstance(t *testing.T) {
+	ts := newTestServer(t)
+	anon := ts.client()
+
+	res, body := anon.do("GET", "/api/health", nil, false)
+	if res.StatusCode != http.StatusOK || body["ok"] != true {
+		t.Fatalf("health: %d %v", res.StatusCode, body)
+	}
+	for _, field := range []string{"version", "store"} {
+		if _, leaked := body[field]; leaked {
+			t.Errorf("public /api/health leaks %q to an anonymous caller: %v", field, body)
+		}
+	}
+
+	// The same fields are still available to an operator who is logged in —
+	// this is a scope change, not a removal.
+	c := ts.client()
+	c.bootstrap("ada", "correct-horse-battery")
+	_, authed := c.do("GET", "/api/health", nil, false)
+	if authed["version"] != "test" {
+		t.Errorf("authenticated /api/health lost the version field: %v", authed)
+	}
+	if authed["store"] != "sqlite" {
+		t.Errorf("authenticated /api/health lost the store field: %v", authed)
+	}
+}
+
 func TestWeakPasswordRejected(t *testing.T) {
 	ts := newTestServer(t)
 	res, body := ts.client().do("POST", "/api/auth/bootstrap", map[string]string{

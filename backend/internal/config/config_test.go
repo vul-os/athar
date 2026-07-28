@@ -77,8 +77,8 @@ func TestUnknownKeysAreRejected(t *testing.T) {
 
 func TestValidateNormalisesPaths(t *testing.T) {
 	cfg := Default()
-	cfg.TrackerPath = "custom.js"   // no leading slash
-	cfg.CollectPath = "collect"     // no leading slash
+	cfg.TrackerPath = "custom.js" // no leading slash
+	cfg.CollectPath = "collect"   // no leading slash
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("Validate: %v", err)
 	}
@@ -98,8 +98,8 @@ func TestValidateNormalisesPaths(t *testing.T) {
 
 func TestValidateRejectsBadValues(t *testing.T) {
 	cases := map[string]func(*Config){
-		"empty port":        func(c *Config) { c.Port = "" },
-		"non-numeric port":  func(c *Config) { c.Port = "http" },
+		"empty port":         func(c *Config) { c.Port = "" },
+		"non-numeric port":   func(c *Config) { c.Port = "http" },
 		"negative retention": func(c *Config) { c.RetentionDays = -1 },
 		"missing geoip file": func(c *Config) { c.GeoIPPath = "/nonexistent/athar-test.mmdb" },
 	}

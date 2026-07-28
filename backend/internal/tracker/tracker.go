@@ -36,9 +36,9 @@ type Handler struct {
 	gzipOnce sync.Once
 	gzipped  []byte
 
-	etag     string
-	modTime  time.Time
-	sriHash  string
+	etag    string
+	modTime time.Time
+	sriHash string
 }
 
 // New loads the embedded scripts.

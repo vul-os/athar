@@ -113,15 +113,15 @@ type revenueBody struct {
 }
 
 type heatBody struct {
-	Kind      string  `json:"k"`
-	X         float64 `json:"x"`   // 0..100, page-relative
-	Y         float64 `json:"y"`   // 0..100, page-relative
-	VW        int     `json:"vw"`  // viewport width
-	VH        int     `json:"vh"`  // viewport height
-	Scroll    float64 `json:"s"`   // 0..100
-	DwellMS   int     `json:"d"`   // milliseconds
-	Selector  string  `json:"sel"` // CSS selector of the target
-	Path      string  `json:"p"`   // path the sample belongs to
+	Kind     string  `json:"k"`
+	X        float64 `json:"x"`   // 0..100, page-relative
+	Y        float64 `json:"y"`   // 0..100, page-relative
+	VW       int     `json:"vw"`  // viewport width
+	VH       int     `json:"vh"`  // viewport height
+	Scroll   float64 `json:"s"`   // 0..100
+	DwellMS  int     `json:"d"`   // milliseconds
+	Selector string  `json:"sel"` // CSS selector of the target
+	Path     string  `json:"p"`   // path the sample belongs to
 }
 
 // ── HTTP ──────────────────────────────────────────────────────────────────────

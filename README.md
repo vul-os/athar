@@ -147,11 +147,11 @@ deployed it.
 | **Reporting** | Pageviews, unique visitors, sessions, bounce rate, average visit time; top pages, entry/exit pages, referrers, UTM campaigns; browser/OS/device/screen/language; country/region/city; custom events; realtime active-visitor count; per-currency revenue totals. |
 | **In-process GeoIP** | Resolves country/region/city from a local MaxMind-format `.mmdb` (DB-IP Lite or GeoLite2). No network call, no service, no database bundled — bring your own file. |
 | **Bot filtering** | Recognised bot traffic is dropped at ingest rather than recorded. |
-| **Public share links** | An unguessable id serves read-only summary stats for one website, no login required. Re-enabling sharing mints a fresh id, so disabling it is a real revocation. |
+| **Public share links** | An unguessable id serves read-only summary stats for one website, no login required. Re-enabling sharing mints a fresh id, so disabling it is a real revocation. **API-only in 0.1.0** — mint or revoke a link with `POST /api/websites/{id}/share`; there is no toggle in the dashboard yet ([ROADMAP.md](ROADMAP.md#near-term)). |
 | **Auth** | argon2id password hashing, server-side sessions (only a token hash is stored), httpOnly + `SameSite=Lax` cookies, double-submit CSRF on every state-changing route, login rate limiting keyed on username *and* client address. |
 | **Roles** | Per-website owner / editor / viewer, layered on instance-wide admin / user roles. |
 | **Retention** | Optional automatic deletion of whole visitor sessions (cascading to their events, heatmap samples and revenue) past a configured age. |
-| **Multiple websites** | Track any number of properties from one instance, one dashboard. |
+| **Multiple websites** | Track any number of properties from one instance, one dashboard. Adding a site is a dashboard action; deleting one is API-only in 0.1.0 (`DELETE /api/websites/{id}`). |
 | **REST API** | Every report the dashboard shows is a documented JSON endpoint. |
 | **PWA dashboard** | Installable on Android, iOS, Windows, macOS, Linux — dark mode by default. |
 | **Single binary, either database** | SQLite (pure Go, no cgo) or Postgres, chosen by one config value — the "Store seam"; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). |
@@ -199,7 +199,7 @@ The Vite dev server proxies `/api` and `/athar.js` to the Go backend so the
 dashboard runs against real data and real session cookies with no CORS shim.
 
 ```bash
-make check     # go build/vet/test, tracker-up-to-date check, npm lint + build
+make check     # gofmt, go build/vet/test, tracker-up-to-date check, npm lint/test/build
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full dev workflow.

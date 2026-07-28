@@ -1,4 +1,4 @@
-.PHONY: check build build-backend build-frontend test lint tracker notices dev run
+.PHONY: check build build-backend build-frontend test test-frontend fmt lint tracker notices dev run
 
 # One verification gate — run before every commit and in CI.
 check:
@@ -11,9 +11,15 @@ build-backend:
 test:
 	go test ./backend/...
 
+fmt:
+	gofmt -w backend/
+
 # Frontend
 lint:
 	npm run lint
+
+test-frontend:
+	npm test
 
 build-frontend:
 	npm run build
