@@ -6,7 +6,7 @@
 export default function Logo({ className = 'h-8 w-8' }) {
   return (
     <svg viewBox="0 0 32 32" className={className} role="img" aria-label="Athar">
-      <rect width="32" height="32" rx="8" fill="#141417" />
+      <rect width="32" height="32" rx="8" fill="#0E0E11" />
       <circle cx="16" cy="16" r="3" fill="var(--color-accent, #e9a23b)" />
       <circle cx="16" cy="16" r="7" fill="none" stroke="var(--color-accent, #e9a23b)"
               strokeOpacity="0.55" strokeWidth="1.6" />
