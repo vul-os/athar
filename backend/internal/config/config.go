@@ -8,6 +8,11 @@
 // environment variables → command-line flags. Environment above file so a
 // container can override a baked-in config; flags above everything so an
 // operator debugging a box always wins.
+//
+// no-broker-dep:allow-file: the Host field's doc comment below lists Ephor as one of three
+// illustrative, interchangeable third-party tunnel choices (alongside cloudflared and ngrok) an
+// operator might pick to reach a loopback-bound default — no import, no default endpoint, no
+// code path favours any of the three. C-DEP's Go import closure is clean (273 entries, no hit).
 package config
 
 import (
