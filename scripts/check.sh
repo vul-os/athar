@@ -26,24 +26,33 @@ go build ./backend/... || fail=1
 step "go: vet"
 go vet ./backend/... || fail=1
 
+# Covers the whole server, including the embedded dashboard: backend/cmd/athar
+# serves it, asserts security headers and that auth cannot be bypassed;
+# backend/internal/webui asserts the embed is present, non-vacuous, and
+# references no external origin.
 step "go: test"
 go test ./backend/... || fail=1
 
 step "tracker: up to date"
 node scripts/build-tracker.mjs --check || fail=1
 
-step "frontend: lint"
-npm run lint || fail=1
-
-# vitest exits 1 when it matches no test files, so this step cannot pass by
-# running nothing. Each test module additionally asserts that every export of
-# the module it covers is named in its own exercised-set, so a new export
-# widens the gate instead of slipping past it.
-step "frontend: test"
-npm test || fail=1
-
-step "frontend: build"
-npm run build || fail=1
+# The dashboard has no build step and no lint config of its own — it is
+# hand-written HTML/CSS/JS with no framework to misuse. format.js and
+# countries.js are the one part with real logic, and they keep their test
+# coverage: node:test, no vitest, no npm install beyond the `node` binary
+# already required for the tracker build above. The glob must actually match
+# files: `node --test` given a bare, empty directory exits 0 having run
+# nothing, which is not a passing gate.
+step "dashboard: format.js / countries.js tests"
+shopt -s nullglob
+jstests=(scripts/jstest/*.test.mjs)
+shopt -u nullglob
+if [ "${#jstests[@]}" -eq 0 ]; then
+  echo "no test files matched scripts/jstest/*.test.mjs"
+  fail=1
+else
+  node --test "${jstests[@]}" || fail=1
+fi
 
 if [ "$fail" -ne 0 ]; then
   printf '\n\033[31mCHECK FAILED\033[0m\n'

@@ -25,6 +25,7 @@ import * as format from '../../backend/internal/webui/static/format.js'
 import {
   RANGES,
   bucketLabel,
+  bytes,
   count,
   delta,
   duration,
@@ -39,6 +40,7 @@ const exercised = new Set([
   'count',
   'percent',
   'duration',
+  'bytes',
   'money',
   'bucketLabel',
   'delta',
@@ -121,6 +123,40 @@ describe('duration', () => {
     assert.strictEqual(duration(3600), '1h 00m')
     assert.strictEqual(duration(3600 + 5 * 60), '1h 05m')
     assert.strictEqual(duration(26 * 3600 + 30 * 60), '26h 30m')
+  })
+})
+
+// bytes() labels the page-capture an operator uploaded for the heatmap
+// backdrop, so its job is to match what their own file manager told them the
+// file weighed. Binary units, and the unit changes before the number gets long.
+describe('bytes', () => {
+  it('has a dash for nothing, not a zero', () => {
+    assert.strictEqual(bytes(null), '—')
+    assert.strictEqual(bytes(undefined), '—')
+    assert.strictEqual(bytes(0), '0 B')
+  })
+
+  it('counts bytes below a kibibyte', () => {
+    assert.strictEqual(bytes(1), '1 B')
+    assert.strictEqual(bytes(1023), '1023 B')
+  })
+
+  it('switches to whole kilobytes at 1024, binary not decimal', () => {
+    assert.strictEqual(bytes(1024), '1 KB')
+    assert.strictEqual(bytes(1000), '1000 B')
+    assert.strictEqual(bytes(421_888), '412 KB')
+    assert.strictEqual(bytes(1024 * 1023), '1023 KB')
+  })
+
+  it('gives megabytes one decimal, where the fraction is worth reading', () => {
+    assert.strictEqual(bytes(1024 * 1024), '1.0 MB')
+    assert.strictEqual(bytes(1.44 * 1024 * 1024), '1.4 MB')
+    assert.strictEqual(bytes(8 * 1024 * 1024), '8.0 MB')
+  })
+
+  it('reaches gigabytes rather than printing five-figure megabytes', () => {
+    assert.strictEqual(bytes(1024 ** 3), '1.0 GB')
+    assert.strictEqual(bytes(2.5 * 1024 ** 3), '2.5 GB')
   })
 })
 

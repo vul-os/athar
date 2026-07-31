@@ -55,15 +55,13 @@ jobs:
           fi
           echo "Version check passed: $PKG_VERSION == $TAG_VERSION"
 
+      # npm exists here only to check the tracker script's minified build is
+      # current. The dashboard needs no npm step at all — it is hand-written
+      # HTML/CSS/JS embedded via go:embed (backend/internal/webui).
       - run: npm ci
 
       - name: Tracker up to date
         run: node scripts/build-tracker.mjs --check
-
-      - name: JS lint
-        run: npm run lint
-
-      - run: npm run build
 
       # ── Go: test + vet ────────────────────────────────────────────────────
       - name: Go test
@@ -79,8 +77,6 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
         run: |
-          mkdir -p backend/cmd/athar/dist
-          cp -r dist/* backend/cmd/athar/dist/
           mkdir -p backend/cmd/athar/site
           cp -r site/* backend/cmd/athar/site/
 
@@ -88,12 +84,12 @@ jobs:
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
 
-          go build -tags embed_frontend \
+          go build -tags embed_site \
             -trimpath \
             -ldflags "-s -w -X main.Version=${VERSION}" \
             -o "athar-${GOOS}-${GOARCH}${EXT}" ./backend/cmd/athar
 
-          rm -rf backend/cmd/athar/dist backend/cmd/athar/site
+          rm -rf backend/cmd/athar/site
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

@@ -136,33 +136,11 @@ func run() error {
 	raw, gz := trackerHandler.Size()
 	log.Printf("tracker: %s (%d B, %d B gzipped)", cfg.TrackerPath, raw, gz)
 
-	mux := http.NewServeMux()
-
-	// Collector and tracker script. Both paths are configurable, because the
-	// default names are the first thing a content blocker matches on.
-	mux.Handle("GET "+cfg.TrackerPath, trackerHandler)
-	mux.Handle("HEAD "+cfg.TrackerPath, trackerHandler)
-	mux.HandleFunc(cfg.CollectPath, collector.Handler())
-
-	api.New(api.Options{
-		Store:     st,
-		Sessions:  sessions,
-		Collector: collector,
-		Config:    cfg,
-		Version:   Version,
-	}).Register(mux)
-
-	// Marketing site (cloud-only) and the dashboard SPA.
-	if cfg.ServeLanding {
-		if site := newSiteHandler(); site != nil {
-			mux.Handle("/site/", http.StripPrefix("/site", site))
-		}
-	}
-	mux.Handle("/", newFrontendHandler())
+	handler := newServer(cfg, st, sessions, collector, trackerHandler, Version)
 
 	srv := &http.Server{
 		Addr:    cfg.Addr(),
-		Handler: securityHeaders(cfg, mux),
+		Handler: handler,
 		// An ingest endpoint is exposed to the open internet, so every phase of
 		// a request is bounded. Without these, a slowloris client can hold
 		// connections open indefinitely at negligible cost to itself.
@@ -192,6 +170,40 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	return srv.Shutdown(shutdownCtx)
+}
+
+// newServer builds the complete request handler: collector, tracker script,
+// API, marketing site (when configured) and the dashboard, wrapped in the
+// security headers every route gets. Split out from run() so a test can
+// exercise the exact handler a real deployment serves — routing, auth, CSRF
+// and headers included — over an httptest server, without binding a real
+// port or going through main()'s flag/signal plumbing.
+func newServer(cfg *config.Config, st store.Store, sessions *auth.Manager, collector *ingest.Collector, trackerHandler http.Handler, version string) http.Handler {
+	mux := http.NewServeMux()
+
+	// Collector and tracker script. Both paths are configurable, because the
+	// default names are the first thing a content blocker matches on.
+	mux.Handle("GET "+cfg.TrackerPath, trackerHandler)
+	mux.Handle("HEAD "+cfg.TrackerPath, trackerHandler)
+	mux.HandleFunc(cfg.CollectPath, collector.Handler())
+
+	api.New(api.Options{
+		Store:     st,
+		Sessions:  sessions,
+		Collector: collector,
+		Config:    cfg,
+		Version:   version,
+	}).Register(mux)
+
+	// Marketing site (cloud-only) and the dashboard.
+	if cfg.ServeLanding {
+		if site := newSiteHandler(); site != nil {
+			mux.Handle("/site/", http.StripPrefix("/site", site))
+		}
+	}
+	mux.Handle("/", newFrontendHandler())
+
+	return securityHeaders(cfg, mux)
 }
 
 // backgroundTasks runs the periodic housekeeping: expired login sessions, and
@@ -255,14 +267,22 @@ func applyRetention(ctx context.Context, st store.Store, days int) {
 
 // securityHeaders sets the response headers that apply to every route.
 func securityHeaders(cfg *config.Config, next http.Handler) http.Handler {
-	// The dashboard is hand-written HTML/CSS/JS with no inline script and no
-	// inline style — ui.css is a plain external stylesheet and app.js an
-	// external ES module — so the CSP needs no 'unsafe-inline' anywhere,
-	// tighter than the Tailwind-era policy this replaced.
+	// The dashboard is hand-written HTML/CSS/JS with no inline script — ui.css
+	// is a plain external stylesheet and app.js an external ES module, so
+	// script-src needs no 'unsafe-inline' at all (tighter than the
+	// Tailwind-era policy this replaced). style-src still allows
+	// 'unsafe-inline', but only for the style="" *attribute* app.js/chart.js
+	// set on individual elements for values that are genuinely per-element
+	// and data-dependent — a bar's width, a tooltip's position, a wireframe
+	// box's coordinates, a chart's aspect ratio. There is no bounded set of
+	// CSS classes that could express those; every element with such a
+	// property is styled from element.style directly, never innerHTML, so
+	// this cannot be used to inject markup, only property values on an
+	// element JS already controls.
 	csp := []string{
 		"default-src 'self'",
 		"script-src 'self'",
-		"style-src 'self'",
+		"style-src 'self' 'unsafe-inline'",
 		"img-src 'self' data:",
 		"font-src 'self' data:",
 		"connect-src 'self'",

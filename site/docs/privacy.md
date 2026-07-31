@@ -54,3 +54,11 @@ Separately from visitor tracking, the *dashboard* has real accounts: argon2id pa
 ## Public share links
 
 A website's dashboard can be shared read-only via an unguessable share id (`GET /api/share/{shareID}/stats`). Turning sharing off and back on mints a *fresh* id rather than reviving the old one — disabling sharing is a real revocation, not cosmetic.
+
+## Page captures: an operator's own choice, not the tracker's
+
+The click heatmap can render over a real picture of the page instead of only a wireframe (see [Heatmaps](./heatmaps.md#page-captures)). That picture is never something the tracker collects — nothing above changes: the tracker still records only a click's position as a document-relative percentage plus a short CSS selector, never DOM content, never text, never a screenshot, and the server never fetches the tracked site to make one itself.
+
+The capture is a screenshot an **operator** deliberately takes of their own page and uploads through the dashboard (`PUT /api/websites/{id}/page-image`), stored in their own database — one per (website, path, viewport width), in a `page_images` table only an authenticated editor or owner can write to. It's served back only to signed-in users of that website, never publicly.
+
+Because it's stored in the operator's own database and visible to every signed-in viewer of that website, whatever is on screen when it's captured — a real visitor's name, a basket, an order — becomes visible to all of them too. The dashboard states this at the moment of upload and recommends capturing the page as a logged-out visitor would see it. That's a choice about what the operator puts in their own database, same as any other data they might store there; it's not a tracker behaviour, and no visitor's browser is involved in producing it.

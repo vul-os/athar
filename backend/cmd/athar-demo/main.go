@@ -508,18 +508,39 @@ type heatCluster struct {
 // them across most of the page rather than concentrating them anywhere.
 var strayCluster = heatCluster{CX: 50, CY: 50, SigmaX: 35, SigmaY: 35, Weight: 10, Selector: ""}
 
+// The clusters for "/" and "/pricing" are not invented numbers. They are the
+// measured, document-relative positions of the real clickable elements on the
+// real pages in scripts/demo-site/, printed by:
+//
+//	node scripts/demo-capture.mjs --measure
+//
+// That matters because those same two pages are what the screenshot pipeline
+// uploads as the heatmap's page capture. A demo heat field over a demo page is
+// only worth looking at if the heat lands on the buttons, and the only way to
+// keep it landing on the buttons through a redesign is to re-run the measurement
+// and re-transcribe the numbers rather than nudge them until they look right.
+//
+// The measurement is stable across viewport width for CY (the document is the
+// same height at 1440 and 1920 — a fixed max-width container), and varies a
+// little for CX/SigmaX because those are proportions of a wider or narrower
+// document. Where the two disagree, the value below sits between them.
+//
+// "/docs/getting-started" has no page in scripts/demo-site/ and so gets no
+// capture: it is the path that demonstrates the honest fallback, where the view
+// draws the selector wireframe and labels itself a schematic.
 var heatClusters = map[string][]heatCluster{
 	"/": {
-		{CX: 50, CY: 4, SigmaX: 18, SigmaY: 1.5, Weight: 30, Selector: "header > nav a.nav-link"},
-		{CX: 50, CY: 32, SigmaX: 8, SigmaY: 4, Weight: 40, Selector: "main > section.hero button.cta"},
-		{CX: 50, CY: 97, SigmaX: 20, SigmaY: 1.5, Weight: 15, Selector: "footer > div a"},
+		{CX: 52.0, CY: 3.7, SigmaX: 6.5, SigmaY: 0.5, Weight: 22, Selector: "header > nav a.nav-link"},
+		{CX: 50.4, CY: 23.2, SigmaX: 5.4, SigmaY: 0.9, Weight: 30, Selector: "main > section.hero button.cta"},
+		{CX: 50.0, CY: 51.5, SigmaX: 18.0, SigmaY: 0.8, Weight: 26, Selector: "section.catalogue article.card button"},
+		{CX: 49.8, CY: 95.9, SigmaX: 6.6, SigmaY: 0.4, Weight: 12, Selector: "footer > div a"},
 	},
 	"/pricing": {
-		{CX: 50, CY: 4, SigmaX: 18, SigmaY: 1.5, Weight: 20, Selector: "header > nav a.nav-link"},
-		{CX: 22, CY: 46, SigmaX: 5, SigmaY: 4, Weight: 15, Selector: "main > section.plans div.plan-card button"},
-		{CX: 50, CY: 46, SigmaX: 5, SigmaY: 4, Weight: 35, Selector: "main > section.plans div.plan-card button"}, // the highlighted "pro" card gets the most clicks
-		{CX: 78, CY: 46, SigmaX: 5, SigmaY: 4, Weight: 15, Selector: "main > section.plans div.plan-card button"},
-		{CX: 50, CY: 97, SigmaX: 20, SigmaY: 1.5, Weight: 10, Selector: "footer > div a"},
+		{CX: 51.7, CY: 4.4, SigmaX: 5.6, SigmaY: 0.5, Weight: 20, Selector: "header > nav a.nav-link"},
+		{CX: 22.6, CY: 45.1, SigmaX: 7.3, SigmaY: 1.0, Weight: 15, Selector: "main > section.plans div.plan-card button"},
+		{CX: 50.0, CY: 47.3, SigmaX: 7.3, SigmaY: 1.0, Weight: 35, Selector: "main > section.plans div.plan-card button"}, // the highlighted middle card gets the most clicks
+		{CX: 77.4, CY: 47.3, SigmaX: 7.3, SigmaY: 1.0, Weight: 15, Selector: "main > section.plans div.plan-card button"},
+		{CX: 49.8, CY: 95.2, SigmaX: 5.7, SigmaY: 0.4, Weight: 10, Selector: "footer > div a"},
 	},
 	"/docs/getting-started": {
 		{CX: 50, CY: 4, SigmaX: 18, SigmaY: 1.5, Weight: 15, Selector: "header > nav a.nav-link"},

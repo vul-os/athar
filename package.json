@@ -4,37 +4,20 @@
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "type": "module",
+  "description": "npm exists here for exactly two things: minifying the tracker script (esbuild) and driving Playwright for screenshots/tests. The dashboard itself is hand-written HTML/CSS/JS embedded straight into the Go binary (backend/internal/webui) \u2014 `go build ./...` alone produces a working server with a working dashboard, no Node involved.",
   "scripts": {
-    "dev": "vite",
     "dev:backend": "go run ./backend/cmd/athar",
-    "build": "vite build",
     "build:tracker": "node scripts/build-tracker.mjs",
-    "build:all": "npm run build:tracker && vite build && node scripts/build-binary.mjs",
-    "lint": "eslint .",
-    "test": "vitest run",
-    "preview": "vite preview",
-    "screenshots": "node scripts/screenshots.mjs"
-  },
-  "dependencies": {
-    "@fontsource-variable/instrument-sans": "^5.3.0",
-    "@fontsource/ibm-plex-mono": "^5.3.0",
-    "@tailwindcss/vite": "^4.2.2",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "tailwindcss": "^4.2.2"
+    "build:binary": "node scripts/build-binary.mjs",
+    "build": "npm run build:tracker && npm run build:binary",
+    "test": "node --test scripts/jstest/*.test.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
+    "screenshots:site": "node scripts/site-screenshots.mjs",
+    "check:site": "node scripts/site-check.mjs",
+    "demo:pages": "node scripts/demo-capture.mjs --measure"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
     "esbuild": "^0.28.0",
-    "eslint": "^9.39.4",
-    "eslint-plugin-react-hooks": "7.0.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.4.0",
-    "playwright": "^1.52.0",
-    "vite": "^8.0.1",
-    "vitest": "^4.1.9"
+    "playwright": "^1.52.0"
   }
 }

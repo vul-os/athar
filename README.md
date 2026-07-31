@@ -14,7 +14,6 @@
 [![Release](https://img.shields.io/github/v/release/vul-os/athar?style=flat-square)](https://github.com/vul-os/athar/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/vul-os/athar/ci.yml?branch=main&style=flat-square)](https://github.com/vul-os/athar/actions)
 [![Go](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go&logoColor=white)](https://golang.org)
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 
 *Vulos — rooted in **vula**, the Zulu and Xhosa word for **open**.*
 
@@ -54,7 +53,7 @@ an analytics tool is for.
 
 <table>
 <tr>
-<td colspan="2"><img src="docs/screenshots/heatmap-clicks-dark.png" alt="Athar click heatmap — a density field over the page with the most-clicked CSS selectors listed alongside"><br><em><strong>Click heatmap</strong> — density over the page, with the most-clicked elements listed as selectors so the map survives a redesign</em></td>
+<td colspan="2"><img src="docs/screenshots/heatmap-clicks-dark.png" alt="Athar click heatmap — a density field over an operator-uploaded capture of the real page, with the most-clicked CSS selectors listed alongside"><br><em><strong>Click heatmap</strong> — density over a real capture of the page (an editor's own upload, badged "Page capture"), with the most-clicked elements listed as selectors so the map still means something after a redesign. No capture uploaded yet? The map falls back to a wireframe schematic, badged as one — see <a href="#heatmap-page-captures">Heatmap page captures</a></em></td>
 </tr>
 <tr>
 <td><img src="docs/screenshots/heatmap-scroll.png" alt="Athar scroll-depth chart showing the share of sessions reaching each tenth of the page" width="420"><br><em>Scroll depth — how far people actually get</em></td>
@@ -66,7 +65,7 @@ an analytics tool is for.
 </tr>
 <tr>
 <td><img src="docs/screenshots/login.png" alt="Athar first-run setup screen" width="420"><br><em>First run — create the only account on your instance</em></td>
-<td><img src="docs/screenshots/mobile.png" alt="Athar dashboard on a phone, installable as a PWA" width="210"><br><em>Installable as a PWA</em></td>
+<td><img src="docs/screenshots/mobile.png" alt="Athar dashboard on a phone" width="210"><br><em>Responsive down to a phone screen — no separate app to install</em></td>
 </tr>
 </table>
 
@@ -127,12 +126,13 @@ on infrastructure you control:
   (e.g. the Vulos OS) can embed the Athar dashboard as an app tile behind its
   own routing and auth.
 
-The dashboard is also a **PWA**, deliberately not a desktop app: the
+The dashboard is deliberately not a desktop or installable app: the
 collector is a server process that has to stay running to receive beacons,
-so packaging it as something you close when you close your laptop would mean
-losing data. A PWA install covers Android, iOS, Windows, macOS and Linux
-from the one build, while the actual collector keeps running wherever you
-deployed it.
+so packaging the dashboard as something you close when you close your laptop
+would invite the wrong mental model. It's a plain web page — hand-written
+HTML/CSS/JS, no framework — that you open in a browser tab from any device
+wherever it's reachable, while the actual collector keeps running
+independently of whether that tab is open.
 
 ---
 
@@ -143,7 +143,7 @@ deployed it.
 | **Cookieless tracking** | No cookie is set or read, nothing is written to storage. Visitor identity is a daily, per-site, salted server-side hash — see [Privacy architecture](#privacy-architecture). |
 | **Automatic pageviews + SPA routing** | Tracks page loads and, via `pushState`/`replaceState`/`popstate` hooks, client-side route changes in React/Vue/etc. apps. |
 | **Custom & revenue events** | `athar.track(name, data)` for arbitrary events; `athar.revenue(amount, currency, orderId, name)` for ecommerce, stored as integer minor units per currency. |
-| **Heatmaps** | Click, scroll-depth and attention (dwell-time-by-band) sampling, positioned as page-relative percentages with a CSS selector — survives layout and viewport changes. No DOM snapshot, no keystrokes, no page content is ever captured. |
+| **Heatmaps** | Click, scroll-depth and attention (dwell-time-by-band) sampling, positioned as page-relative percentages with a CSS selector — survives layout and viewport changes. The tracker itself captures no DOM snapshot, no keystrokes, no page content, ever. An editor can optionally upload a picture of the page (per page, per viewport width) for the click map to render over; with none uploaded, it falls back to a wireframe schematic reconstructed from recorded selectors. See [Heatmap page captures](#heatmap-page-captures). |
 | **Reporting** | Pageviews, unique visitors, sessions, bounce rate, average visit time; top pages, entry/exit pages, referrers, UTM campaigns; browser/OS/device/screen/language; country/region/city; custom events; realtime active-visitor count; per-currency revenue totals. |
 | **In-process GeoIP** | Resolves country/region/city from a local MaxMind-format `.mmdb` (DB-IP Lite or GeoLite2). No network call, no service, no database bundled — bring your own file. |
 | **Bot filtering** | Recognised bot traffic is dropped at ingest rather than recorded. |
@@ -153,7 +153,7 @@ deployed it.
 | **Retention** | Optional automatic deletion of whole visitor sessions (cascading to their events, heatmap samples and revenue) past a configured age. |
 | **Multiple websites** | Track any number of properties from one instance, one dashboard. Adding a site is a dashboard action; deleting one is API-only in 0.1.0 (`DELETE /api/websites/{id}`). |
 | **REST API** | Every report the dashboard shows is a documented JSON endpoint. |
-| **PWA dashboard** | Installable on Android, iOS, Windows, macOS, Linux — dark mode by default. |
+| **Dashboard** | Hand-written HTML/CSS/JS embedded straight into the Go binary — no framework, no separate build step, dark mode by default. |
 | **Single binary, either database** | SQLite (pure Go, no cgo) or Postgres, chosen by one config value — the "Store seam"; see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). |
 | **Small tracker** | 3.3 KB raw, 1.6 KB gzipped. `?source=1` serves the readable original so anyone can verify what a site is running. |
 
@@ -161,15 +161,20 @@ deployed it.
 
 ## Quick start
 
-Requires Go 1.25+ and Node.js 22+ to build from source.
+Requires Go 1.25+ to build from source. Node.js 22+ is only needed if you
+also want to rebuild the tracker from source or embed the marketing site
+(see below) — the dashboard itself has no build step.
 
 ```bash
 git clone https://github.com/vul-os/athar.git
 cd athar
-npm install
-npm run build:all   # outputs ./athar (single binary, embedded dashboard)
+go build -o athar ./backend/cmd/athar   # dashboard + tracker embedded, no Node needed
 ./athar
 ```
+
+For a release build that also rebuilds the tracker and embeds the marketing
+mini-site, use `npm run build` instead (requires Node.js 22+; outputs
+`./athar`).
 
 That's it — `./athar` with no flags listens on `127.0.0.1:3100` and stores to
 `./athar.db` in the current directory. Open [http://localhost:3100](http://localhost:3100)
@@ -190,16 +195,17 @@ full walkthrough.
 ### Development
 
 ```bash
-npm install
-npm run dev                        # Vite dev server on :5173, hot reload
-go run ./backend/cmd/athar         # Go backend on :3100, in another terminal
+go run ./backend/cmd/athar         # Go backend + dashboard on :3100
 ```
 
-The Vite dev server proxies `/api` and `/athar.js` to the Go backend so the
-dashboard runs against real data and real session cookies with no CORS shim.
+There is no separate frontend dev server: the dashboard is hand-written
+HTML/CSS and plain ES modules (`backend/internal/webui/static/`), embedded
+via `go:embed`. Edit those files directly, then re-run the command above —
+Ctrl-C and restart to pick up the change, since `go:embed` reads the files
+at compile time.
 
 ```bash
-make check     # gofmt, go build/vet/test, tracker-up-to-date check, npm lint/test/build
+make check     # gofmt, go build/vet/test, tracker-up-to-date check, dashboard JS tests (node --test)
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full dev workflow.
@@ -247,6 +253,57 @@ renaming it is the standard way to survive a content blocker that matches on
 filename) with a stable ETag and a 4-hour cache; `?source=1` always serves
 the current binary's readable, commented source, so anyone can check exactly
 what a site they're visiting is running.
+
+---
+
+## Heatmap page captures
+
+The click heatmap can render over a real picture of the page. That picture
+is **operator-supplied upload, not automatic capture** — the tracker never
+changed to make this work, and still records only an x/y position
+(as a percentage of the *document*, not the viewport), the viewport size,
+and a short CSS selector per click. No DOM, no HTML, no text, no form
+values, and the server never fetches the tracked site to render one itself.
+
+From the dashboard, an editor or owner takes a full-page screenshot of a
+page (most browsers: developer tools → device toolbar → set the width →
+"Capture full size screenshot") and uploads it against that page's path and
+the viewport width it was taken at. There is one capture per (website, path,
+viewport width) — re-uploading replaces it — and it's served back only to
+signed-in users of that website, with a restrictive
+`Content-Security-Policy` and an ETag. The stored format is decided by
+decoding the uploaded bytes, never by a claimed `Content-Type`.
+
+**Why upload rather than capture automatically?** Two alternatives were
+considered and rejected — see
+[`backend/internal/api/pageimages.go`](backend/internal/api/pageimages.go)
+for the full reasoning:
+
+- A tracker-side DOM snapshot would upload the page *as a visitor saw it* —
+  including their name, their basket, their order — and sanitising that
+  reliably is a permanent, adversarial maintenance burden. Athar's tracker
+  captures no page content at all; that's a promise, not a gap to route
+  around.
+- Server-side rasterisation would need a headless browser next to a binary
+  whose whole distribution story is "one static Go binary, no cgo, no
+  daemons," would only work for pages the server can reach, and would turn
+  the analytics server into a thing that makes outbound requests to
+  operator-named URLs — an SSRF surface where there was none.
+
+**Because the capture is something you choose to upload, what's in it is
+your call.** It's stored in your own database and shown only to signed-in
+users of that website's dashboard — but anything visible in it becomes
+visible to *every* one of them. The dashboard says this at the moment of
+upload: capture the page as a logged-out visitor sees it, not a page with a
+real customer's name, basket or order on screen.
+
+**Without a matching capture, the map falls back to a wireframe schematic**
+— the bounding box of every selector's own recorded clicks, badged
+`SCHEMATIC` and captioned "not a picture of the page" — never a stale or
+mismatched image borrowed from another page or viewport. "All viewports"
+always shows the schematic too: averaging a 390px layout and a 1440px one
+onto a single picture would be exactly the authoritative-looking lie this
+feature exists to avoid.
 
 ---
 
@@ -393,7 +450,7 @@ where and what's especially in scope.
 | Document | Description |
 |---|---|
 | [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) | Installation, first-run setup, adding a site |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The Store seam, the ingest path, the embed/build-tag pattern, why PWA not desktop |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | The Store seam, the ingest path, the embed/build-tag pattern, why the dashboard is hand-written JS with no build step |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Every config key, env var and flag |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | The hashing construction's threat model — what's recoverable and what isn't |
 | [docs/SELF-HOSTING.md](docs/SELF-HOSTING.md) | Tunnels, reverse proxies, `trust_proxy_headers`, HTTPS |
@@ -407,8 +464,8 @@ where and what's especially in scope.
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for dev
 setup, branch/PR conventions, and the list of frozen invariants (no cgo, no
-`.tsx`, nothing that phones home, no raw IP at rest, no cookies from the
-tracker).
+frontend build step for the dashboard, nothing that phones home, no raw IP
+at rest, no cookies from the tracker).
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/my-feature`
@@ -427,11 +484,14 @@ Vulos project; source and issues at [github.com/vul-os/athar](https://github.com
 
 ### Third-party notices
 
-Athar redistributes third-party software: Go modules compiled into the
-binary (`modernc.org/sqlite`, `pgx`, `maxminddb-golang`, `golang.org/x/crypto`
-and their transitive dependencies) and the npm packages bundled into the
-embedded dashboard. Their licences (MIT, BSD, ISC, Apache-2.0, MPL-2.0)
-require the copyright notice and licence text to accompany every copy.
+Athar redistributes third-party software one way: Go modules compiled into
+the binary (`modernc.org/sqlite`, `pgx`, `maxminddb-golang`,
+`golang.org/x/crypto` and their transitive dependencies). The dashboard is
+hand-written HTML/CSS/JS with zero third-party code, and package.json's only
+dependencies are devDependencies (esbuild for the tracker build, Playwright
+for screenshots/tests) that never ship in the binary. These Go modules'
+licences (MIT, BSD, ISC, Apache-2.0, MPL-2.0) require the copyright notice
+and licence text to accompany every copy.
 
 [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) has the name, version,
 licence and full text for every component — generated from the real
@@ -456,9 +516,12 @@ ecommerce analytics, GDPR-friendly analytics, single binary analytics, open sour
 ## Brand
 
 The mark in [`brand/`](brand/) is the source of truth. Every icon this repo
-ships — favicon, PWA and app icons, the mark in the README and on the site — is
-rendered from `brand/logo.svg` rather than redrawn, so there is one approved
-drawing and no second copy to drift.
+ships — the mark in the README and the site's favicon — is rendered from
+`brand/logo.svg` rather than redrawn, so there is one approved drawing and no
+second copy to drift. (The dashboard PWA icons and its own favicon were
+removed along with the PWA itself — see [CHANGELOG.md](CHANGELOG.md) — and
+the embedded dashboard currently ships no favicon of its own; flagged for
+whoever owns `backend/internal/webui` next.)
 
 Copy it outward, never edit a derived copy, and never edit `brand/` to match
 something downstream.

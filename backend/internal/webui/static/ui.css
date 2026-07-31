@@ -210,6 +210,13 @@ main.main { padding: 24px 0 32px; display: flex; flex-direction: column; gap: 16
 
 /* ── Stat tiles ────────────────────────────────────────────────────────── */
 .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+/* Grid/flex items default to min-width:auto, which honours a nowrap-text
+   descendant's full content width instead of letting ellipsis do its job —
+   the classic cause of a panel silently forcing the page wider than its
+   viewport. Every grid/flex container below that can hold a long, unbroken
+   string (a page path, a CSS selector, a stat value) gets min-width:0 on
+   its immediate items so they shrink to the track/flex-basis instead. */
+.stat-grid > * { min-width: 0; }
 .stat-tile { background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .stat-tile-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .stat-label { font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-faint); }
@@ -224,6 +231,7 @@ main.main { padding: 24px 0 32px; display: flex; flex-direction: column; gap: 16
 .sparkline-path-accent { stroke: var(--accent); opacity: 1; }
 
 .revenue-row { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.revenue-row > * { min-width: 0; }
 .revenue-tile { flex: 1 1 12rem; min-width: 12rem; }
 
 /* ── Chart ─────────────────────────────────────────────────────────────── */
@@ -266,24 +274,61 @@ main.main { padding: 24px 0 32px; display: flex; flex-direction: column; gap: 16
 .heatmap-blurb { padding: 8px 16px; border-bottom: 1px solid var(--line-soft); font-size: 12px; color: var(--ink-faint); }
 .heatmap-body { padding: 16px; }
 .heatmap-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; }
+.heatmap-grid > * { min-width: 0; }
 .heatmap-grid-bands { grid-template-columns: 1.4fr 1fr; }
 .heatmap-side-title { font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
 .heatmap-note { margin-top: 12px; font-size: 12px; line-height: 1.6; color: var(--ink-faint); }
 
 .heat-viewport-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .heat-viewport-label { font-size: 11.5px; color: var(--ink-faint); }
-.heat-viewport-select { font-size: 12px; }
+.heat-viewport-select { font-size: 12px; max-width: 24rem; }
 
 .heat-frame-outer { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
 .heat-topbar { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .heat-topbar-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
 .heat-topbar-path { margin-left: 6px; font-size: 10px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.heat-topbar-path { flex: 1 1 auto; }
+.heat-badge {
+  flex: 0 0 auto; font-size: 9.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line);
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+/* The badge is the one-glance answer to "am I looking at the page or at a
+   drawing of it?", so the two states must not be a subtle shade apart. */
+.heat-badge-real { border-color: color-mix(in srgb, var(--positive) 45%, transparent); color: var(--positive); background: color-mix(in srgb, var(--positive) 10%, transparent); }
+.heat-badge-schematic { border-color: var(--line); color: var(--ink-faint); background: var(--raised); }
+
 .heat-frame { position: relative; aspect-ratio: 16 / 10; background: var(--heat-frame-bg); background-image:
     linear-gradient(to right, var(--heat-frame-grid) 1px, transparent 1px),
     linear-gradient(to bottom, var(--heat-frame-grid) 1px, transparent 1px);
   background-size: 10% 8%;
 }
-.heat-wire-layer, .heat-canvas-layer { position: absolute; inset: 0; }
+/* With a real page under it the grid is noise, and the frame's own mid-tone is
+   only visible through the capture's own translucency. */
+.heat-frame.has-page { background-image: none; }
+.heat-page-layer, .heat-wire-layer, .heat-canvas-layer { position: absolute; inset: 0; }
+.heat-page-layer { overflow: hidden; }
+
+/* object-fit is `fill`, deliberately, and this is the load-bearing line of the
+   whole feature. The frame's aspect-ratio is set from the image's own
+   dimensions, so `fill` and `contain` agree to within sub-pixel rounding — but
+   only `fill` is *guaranteed* to map the image edge-to-edge with the box the
+   heat canvas plots percentages against. `contain` would letterbox on any
+   rounding disagreement, and a letterbox is a constant offset applied to every
+   sample: a heatmap that is uniformly, invisibly wrong.
+
+   Greyscale, reduced contrast and a touch of transparency are not styling. The
+   heat ramp's legibility was tuned against one fixed mid-tone (see the
+   --heat-frame-bg comment and heatcanvas.js); an arbitrary page underneath
+   would otherwise put saturated colour beneath a saturated ramp and make cold
+   blue over a blue hero indistinguishable from nothing. Flattening the page to
+   a neutral document restores the contrast the ramp was designed for, and it
+   is what every heatmap tool does for the same reason. */
+.heat-page-img {
+  display: block; width: 100%; height: 100%; object-fit: fill;
+  filter: grayscale(1) contrast(.8) brightness(1.04);
+  opacity: .95;
+}
 .heat-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .wireframe-box {
   position: absolute; border: 1px dashed var(--heat-wire-border); border-radius: 3px;
@@ -294,6 +339,37 @@ main.main { padding: 24px 0 32px; display: flex; flex-direction: column; gap: 16
   padding: 1px 4px; border-radius: 0 0 3px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .heat-caption { margin-top: 8px; font-size: 11.5px; line-height: 1.5; color: var(--ink-faint); }
+.heat-caption-warn { color: var(--negative); }
+
+/* ── Page capture panel ────────────────────────────────────────────────── */
+.capture-panel { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.capture-status { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.6; color: var(--ink-muted); }
+.capture-status-dot { flex: 0 0 auto; width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; background: var(--ink-faint); }
+.capture-status-dot.is-on { background: var(--positive); }
+.capture-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.capture-row > * { min-width: 0; }
+.capture-row-end { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.capture-file { flex: 1 1 12rem; min-width: 0; font-size: 11.5px; color: var(--ink-muted); }
+.capture-file::file-selector-button {
+  font: inherit; font-size: 11.5px; margin-right: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  border-radius: 6px; padding: 5px 10px;
+}
+.capture-file::file-selector-button:hover { border-color: var(--accent); }
+.capture-width { width: 5.5rem; min-height: 30px; padding: 4px 8px; font-size: 12px; text-align: right; }
+.capture-hint { margin-top: 8px; font-size: 11.5px; line-height: 1.55; color: var(--ink-faint); }
+.capture-feedback { margin-top: 8px; font-size: 11.5px; color: var(--ink-faint); }
+.capture-feedback.is-error { color: var(--negative); }
+.capture-remove { margin-top: 10px; }
+.capture-note { margin-top: 10px; font-size: 11.5px; line-height: 1.6; color: var(--ink-faint); }
+/* The privacy statement is body-weight and always on screen, not a tooltip:
+   it is the sentence that keeps "nothing about your pages is collected" true. */
+.capture-privacy {
+  margin-top: 14px; padding: 10px 12px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--raised);
+  font-size: 11.5px; line-height: 1.65; color: var(--ink-muted);
+}
+.capture-privacy strong { color: var(--ink); }
 .heat-foot-row { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 11.5px; color: var(--ink-faint); }
 .heat-ramp-legend { display: inline-flex; align-items: center; gap: 8px; }
 .heat-ramp-swatch { display: inline-block; width: 88px; height: 8px; border-radius: 4px; background: linear-gradient(to right, rgb(40,90,210), rgb(40,190,200), rgb(60,200,110), rgb(235,175,55), rgb(225,55,45)); }
@@ -313,6 +389,7 @@ main.main { padding: 24px 0 32px; display: flex; flex-direction: column; gap: 16
 
 /* ── Metric panels ─────────────────────────────────────────────────────── */
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.metrics-grid > * { min-width: 0; }
 .metric-panel-body { padding: 10px 12px; min-height: 12rem; }
 .metric-message { padding: 32px 0; text-align: center; font-size: 13px; color: var(--ink-faint); }
 .metric-message-error { color: var(--negative); }
@@ -349,6 +426,9 @@ main.main { padding: 24px 0 32px; display: flex; flex-direction: column; gap: 16
 @media (max-width: 768px) {
   .wrap { padding: 0 16px; }
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  /* Five tiles over two columns leaves the last row with one empty cell —
+     let the odd tile out span the full row instead of leaving a blank box. */
+  .stat-grid .stat-tile:last-child { grid-column: 1 / -1; }
   .topbar-inner { min-height: 52px; }
   .active-visitors { order: 5; flex-basis: 100%; }
 }

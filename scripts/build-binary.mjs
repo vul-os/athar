@@ -1,18 +1,26 @@
 #!/usr/bin/env node
 /**
- * build-binary.mjs — produce the single static Athar binary.
+ * build-binary.mjs — produce the single static Athar binary, with the
+ * marketing site embedded.
  *
- * Go's embed directive can only reach files inside the package directory, so the
- * built dashboard (dist/) and the marketing site (site/) are staged into
- * backend/cmd/athar/ for the compile and removed afterwards. This mirrors how
- * the sibling Vulos products build, and keeps the staged copies out of the
- * working tree between builds.
+ * The dashboard itself needs none of this: it is hand-written HTML/CSS/JS
+ * embedded via go:embed in backend/internal/webui, so `go build ./...` alone
+ * (no tags, no Node) already produces a binary that serves a fully working
+ * dashboard. This script exists only for the release shape that also bundles
+ * the marketing site (site/), which is served from disk in a plain `go
+ * build` and embedded only under the `embed_site` tag — see
+ * backend/cmd/athar/site_embed.go / site_dev.go.
  *
- * Run `npm run build` (Vite) and `npm run build:tracker` first — `npm run
- * build:all` does all three in order.
+ * Go's embed directive can only reach files inside the package directory, so
+ * site/ is staged into backend/cmd/athar/ for the compile and removed
+ * afterwards, keeping the staged copy out of the working tree between
+ * builds.
+ *
+ * Run `npm run build:tracker` first (or `npm run build`, which does both) so
+ * the embedded tracker script reflects any edits to athar.js.
  */
 
-import { existsSync, rmSync, cpSync, mkdirSync } from 'node:fs'
+import { rmSync, cpSync, mkdirSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,36 +28,28 @@ import { fileURLToPath } from 'node:url'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const PKG = join(ROOT, 'backend/cmd/athar')
 
-const stagedDist = join(PKG, 'dist')
 const stagedSite = join(PKG, 'site')
 
 const binary = process.platform === 'win32' ? 'athar.exe' : 'athar'
 const version = process.env.ATHAR_VERSION || 'dev'
 
 function cleanup() {
-  rmSync(stagedDist, { recursive: true, force: true })
   rmSync(stagedSite, { recursive: true, force: true })
 }
 
-if (!existsSync(join(ROOT, 'dist/index.html'))) {
-  console.error('[build] dist/ is missing or empty — run `npm run build` first')
-  process.exit(1)
-}
-
 // Start from a clean slate: a leftover staged copy from an interrupted build
-// would silently embed stale assets.
+// would silently embed a stale marketing site.
 cleanup()
 
 try {
-  mkdirSync(stagedDist, { recursive: true })
-  cpSync(join(ROOT, 'dist'), stagedDist, { recursive: true })
+  mkdirSync(stagedSite, { recursive: true })
   cpSync(join(ROOT, 'site'), stagedSite, { recursive: true })
 
   execFileSync(
     'go',
     [
       'build',
-      '-tags', 'embed_frontend',
+      '-tags', 'embed_site',
       '-trimpath',
       '-ldflags', `-s -w -X main.Version=${version}`,
       '-o', join(ROOT, binary),

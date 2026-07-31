@@ -6,37 +6,39 @@ We follow the [Contributor Covenant v2.1](https://www.contributor-covenant.org/v
 
 ## Dev Environment Setup
 
-Requirements: Go 1.25+, Node 22+
+Requirements: Go 1.25+. Node 22+ is only needed for the tracker build and
+for `scripts/screenshots.mjs` (Playwright) — the dashboard has no build step
+and no npm dependency.
 
 ```bash
 git clone https://github.com/vul-os/athar.git
 cd athar
-npm install
 ```
 
-**Backend** (Go, hot-reload via `go run`):
+**Backend + dashboard** (Go, hot-reload via `go run`):
 
 ```bash
 go run ./backend/cmd/athar
-# listens on http://127.0.0.1:3100, storing to ./athar.db
+# listens on http://127.0.0.1:3100, storing to ./athar.db, dashboard at /
 ```
 
-**Frontend** (React + Vite, hot reload):
+There is no separate frontend dev server. The dashboard is hand-written
+HTML/CSS and plain ES modules under `backend/internal/webui/static/`
+(`index.html`, `ui.css`, `app.js` and friends), embedded via `go:embed`. Edit
+those files directly, then Ctrl-C and re-run the command above — `go:embed`
+reads the files fresh on the next compile, so a restart is the entire
+"reload" step.
+
+**Full single-binary build** (tracker rebuilt, marketing site embedded):
 
 ```bash
-npm run dev
-# http://localhost:5173 — proxies /api and /athar.js to the Go backend above
-```
-
-Run both at once; the Vite dev server needs the backend up to do anything
-useful, since the dashboard is just a client for the API.
-
-**Full single-binary build** (tracker rebuilt, frontend embedded):
-
-```bash
-npm run build:all
+npm run build
 # outputs ./athar
 ```
+
+A plain `go build -o athar ./backend/cmd/athar` also works with no Node
+involved at all — it just won't rebuild the tracker or embed the marketing
+site (see [ARCHITECTURE.md](docs/ARCHITECTURE.md#the-embed--build-tag-pattern)).
 
 **Before opening a PR**, run the same gate CI runs:
 
@@ -47,16 +49,18 @@ make check
 which runs, in order: `gofmt -l backend/` (any output fails the gate),
 `go build ./backend/...`, `go vet ./backend/...`, `go test ./backend/...`, a
 check that the committed `backend/internal/tracker/athar.min.js` matches
-`athar.js` (`node scripts/build-tracker.mjs --check`), `npm run lint`,
-`npm test` (vitest), and `npm run build`.
+`athar.js` (`node scripts/build-tracker.mjs --check`), and the dashboard's
+JS tests (`node --test scripts/jstest/*.test.mjs`).
 
 Both scoped gates are worth knowing the shape of. `gofmt -l` exits 0 whether
 or not it found unformatted files, so the gate tests its *output*, not its
-status. `vitest run` exits 1 when it matches no test files, so the JS test
-step cannot pass by running nothing — and each test module asserts that every
-export of the module it covers is named in its own exercised-set, so adding
-an export without a test fails the suite instead of quietly widening the
-untested surface.
+status. Node's built-in test runner exits 0 on an empty glob rather than
+failing like vitest used to, so `make check` and CI expand
+`scripts/jstest/*.test.mjs` explicitly and fail if it matches nothing — the
+JS test step cannot pass by silently running no tests. Each test module also
+asserts that every export of the module it covers is named in its own
+exercised-set, so adding an export without a test fails the suite instead of
+quietly widening the untested surface.
 
 Note the gates are scoped to `./backend/...`, not `./...`: the Go tool walks
 `node_modules/`, which contains a vendored Go package (`flatted`) that is not
@@ -86,12 +90,11 @@ Before opening a PR:
 
 ```bash
 gofmt -l backend/          # must print nothing
-go test ./backend/...
+go build ./backend/...
 go vet ./backend/...
-npm run lint
-npm test
-npm run build
+go test ./backend/...
 node scripts/build-tracker.mjs --check
+node --test scripts/jstest/*.test.mjs
 ```
 
 Anything touching `backend/internal/ingest` (the identity hash, the
@@ -120,7 +123,11 @@ usually automatic, but a new query is worth eyeballing against both.
 - **No cgo** in any Go code. Pure Go only — it's why the SQLite driver is
   `modernc.org/sqlite` and not `mattn/go-sqlite3`, and it's what keeps
   cross-compilation (`CGO_ENABLED=0`) trivial for every release target.
-- **No `.tsx`** files. Frontend is JSX only (`*.jsx`).
+- **No frontend build step for the dashboard.** It is hand-written HTML,
+  CSS and plain ES modules (`backend/internal/webui/static/`) embedded via
+  `go:embed` — no React, no JSX/TSX, no bundler, no npm dependency. A PR
+  that reintroduces a framework or build pipeline for the dashboard is the
+  wrong PR unless discussed first.
 - **Nothing that phones home.** No telemetry, no CDN-loaded asset, no
   external font, no remote GeoIP lookup — ever. "The data never leaves your
   server" has to stay true of Athar's own runtime behaviour, not just of the

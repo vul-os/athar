@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 # Regenerate THIRD-PARTY-NOTICES.txt from the ACTUAL dependency graph.
 #
-# Athar redistributes third-party code two ways: the Go modules compiled into
-# the collector/dashboard binary (modernc.org/sqlite, pgx, maxminddb-golang,
-# x/crypto and their transitive deps) and the npm packages bundled into the
-# embedded React dashboard. MIT, BSD, ISC, Apache-2.0, MPL-2.0 and OFL-1.1 all
-# require the copyright notice and licence text to accompany every copy.
+# Athar redistributes third-party code one way now: the Go modules compiled
+# into the collector/dashboard binary (modernc.org/sqlite, pgx,
+# maxminddb-golang, x/crypto and their transitive deps). MIT, BSD, ISC,
+# Apache-2.0, MPL-2.0 and OFL-1.1 all require the copyright notice and
+# licence text to accompany every copy.
+#
+# The npm section below is expected to come back near-empty: the dashboard
+# is hand-written HTML/CSS/JS with zero third-party code (see
+# backend/internal/webui), and package.json's only dependencies are
+# devDependencies (esbuild for the tracker build, Playwright for
+# screenshots/tests) — neither ships in the binary, so `--production` (below)
+# has nothing to report. The step is kept rather than deleted so a future
+# runtime npm dependency cannot slip in unnoticed.
 #
 #     ./scripts/gen-notices.sh
 #

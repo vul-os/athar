@@ -198,6 +198,57 @@ type HeatSample struct {
 	CreatedAt time.Time
 }
 
+// maxPageImageBytes bounds one stored page image. Generous enough for a
+// full-page PNG capture of a long marketing page at 2× device pixel ratio,
+// small enough that a mistaken upload of a video frame or a print-resolution
+// export is rejected rather than parked in the database forever.
+const maxPageImageBytes = 8 << 20 // 8 MiB
+
+// PageImage is an operator-supplied capture of one page at one viewport width:
+// the backdrop the click heat field is drawn over.
+//
+// Athar never produces one of these itself. The tracker records coordinates and
+// selectors and nothing else (see backend/internal/tracker/athar.js), and the
+// server never fetches the tracked site. Every row here exists because someone
+// with write access to the website uploaded a picture they chose — which is the
+// only way to put a real page under a heat field without either shipping a DOM
+// recorder into every visitor's browser or teaching the server to crawl.
+//
+// Alignment is exact by construction, and the constraint that makes it exact is
+// worth stating where the type is defined: HeatSample.XPct/YPct are percentages
+// of the *document*, not the viewport. A full-page capture taken at ViewportW is
+// exactly one document wide and one document tall, so plotting a sample at
+// (XPct%, YPct%) of the rendered image lands on the pixel that was clicked, at
+// any display scale. A viewport-only (above-the-fold) capture is not that
+// picture and will misplace every sample below the fold, which is why the
+// uploader checks the aspect ratio it was given and says so.
+type PageImage struct {
+	ID        string
+	WebsiteID string
+	URLPath   string
+	ViewportW int    // the CSS viewport width the capture was taken at
+	ImageW    int    // intrinsic pixel width (ViewportW × the capture's DPR)
+	ImageH    int    // intrinsic pixel height — the full document, not one screen
+	MIME      string // image/png or image/jpeg
+	SHA256    string // content hash, served as the ETag
+	Bytes     []byte
+	CreatedAt time.Time
+}
+
+// PageImageMeta is a PageImage without its bytes — what a listing returns, so
+// the dashboard can ask "is there a capture for this page and viewport?"
+// without pulling megabytes it may not display.
+type PageImageMeta struct {
+	URLPath   string
+	ViewportW int
+	ImageW    int
+	ImageH    int
+	MIME      string
+	SHA256    string
+	ByteLen   int
+	CreatedAt time.Time
+}
+
 // Revenue is one money-carrying ecommerce event, attributed to the visit that
 // produced it. Amounts are integer minor units (cents) — never floats.
 type Revenue struct {
@@ -350,6 +401,12 @@ type Store interface {
 	ActiveVisitors(ctx context.Context, websiteID string, since time.Time) (int64, error)
 	HeatSamples(ctx context.Context, websiteID, urlPath string, kind HeatKind, rg Range, limit int) ([]HeatSample, error)
 	RevenueSummary(ctx context.Context, websiteID string, rg Range) (map[string]int64, error)
+
+	// Page images — operator-supplied backdrops for the click heatmap.
+	PutPageImage(ctx context.Context, img *PageImage) error
+	GetPageImage(ctx context.Context, websiteID, urlPath string, viewportW int) (*PageImage, error)
+	ListPageImages(ctx context.Context, websiteID string) ([]PageImageMeta, error)
+	DeletePageImage(ctx context.Context, websiteID, urlPath string, viewportW int) error
 
 	// Retention
 	PurgeBefore(ctx context.Context, websiteID string, cutoff time.Time) (int64, error)

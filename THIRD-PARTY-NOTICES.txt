@@ -17,19 +17,20 @@ Go (github.com/vul-os/athar, module "athar"):
                                    ISC          in-process MaxMind .mmdb reader
   - golang.org/x/crypto           BSD-3-Clause argon2id password hashing
 
-npm (dashboard, src/):
-  - react                         MIT
-  - react-dom                     MIT
-  - tailwindcss                   MIT
-  - @tailwindcss/vite             MIT
-  - vite                          MIT
-  - @vitejs/plugin-react          MIT
-  - esbuild                       MIT
+npm: none shipped. The dashboard (backend/internal/webui) is hand-written
+HTML/CSS/JS with zero third-party code — no React, no Tailwind, no bundler,
+nothing npm-installed ends up in the binary. package.json's only
+dependencies are devDependencies used purely as local tooling and never
+redistributed: esbuild (minifies the tracker script at build time; the
+output it produces is Athar's own code, not esbuild's) and Playwright
+(screenshots/tests). `make notices`' `--production` npm scan is expected to
+come back empty and is kept as a gate against a future runtime npm
+dependency slipping in unnoticed.
 
-Every one of these licences (ISC, MIT, BSD-3-Clause) permits redistribution
-with the copyright notice and licence text intact and requires nothing more;
+Every Go licence above (ISC, MIT, BSD-3-Clause) permits redistribution with
+the copyright notice and licence text intact and requires nothing more;
 `make notices` reproduces that text in full for each package and every
-transitive dependency of both graphs, and fails the build if any package in
-either tree has no discoverable licence file.
+transitive dependency, and fails the build if any package has no
+discoverable licence file.
 
 Run `make notices` to replace this file with the real output.

@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build, Lint & Test
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +22,10 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # npm exists here for exactly two things: minifying the tracker script
+      # and (below) driving Playwright. The dashboard itself is hand-written
+      # HTML/CSS/JS embedded via go:embed — a plain `go build ./...` further
+      # down needs no npm step at all.
       - run: npm ci
 
       # The minified tracker (backend/internal/tracker/athar.min.js) is
@@ -30,15 +34,15 @@ jobs:
       - name: Tracker up to date
         run: node scripts/build-tracker.mjs --check
 
-      - name: JS lint
-        run: npm run lint
-
-      # vitest exits 1 when it matches no test files, so this step cannot pass
-      # by running nothing.
-      - name: JS tests
-        run: npm test
-
-      - run: npm run build
+      # format.js / countries.js are the dashboard's only real logic; this is
+      # their test coverage (node:test, no vitest). The glob must actually
+      # match files, so this cannot pass by silently running nothing.
+      - name: Dashboard JS tests
+        run: |
+          shopt -s nullglob
+          files=(scripts/jstest/*.test.mjs)
+          [ "${#files[@]}" -gt 0 ] || { echo "no test files matched"; exit 1; }
+          node --test "${files[@]}"
 
       # gofmt -l exits 0 whether or not it found anything; the file list is the
       # signal, so the gate has to test the output, not the status.
@@ -55,16 +59,24 @@ jobs:
       - name: Go vet
         run: go vet ./backend/...
 
+      # Covers the whole server, including the embedded dashboard: security
+      # headers, that auth cannot be bypassed, and that the embed is present
+      # and references no external origin.
       - name: Go tests
         run: go test ./backend/...
 
-      - name: Build embedded binary
-        run: |
-          mkdir -p backend/cmd/athar/dist
-          cp -r dist/* backend/cmd/athar/dist/
-          cp -r site backend/cmd/athar/site
-          go build -tags embed_frontend -o athar ./backend/cmd/athar
-          rm -rf backend/cmd/athar/dist backend/cmd/athar/site
+      - name: Plain go build (no tags — the path every self-hoster actually builds)
+        run: go build -o athar-plain ./backend/cmd/athar
 
-      - name: Verify binary
+      - name: Verify plain binary
+        run: ./athar-plain --version
+
+      - name: Build release binary (marketing site embedded)
+        run: |
+          mkdir -p backend/cmd/athar/site
+          cp -r site/* backend/cmd/athar/site/
+          go build -tags embed_site -o athar ./backend/cmd/athar
+          rm -rf backend/cmd/athar/site
+
+      - name: Verify release binary
         run: ./athar --version

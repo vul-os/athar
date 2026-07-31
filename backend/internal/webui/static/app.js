@@ -529,7 +529,16 @@ function renderOverview(main, website, range) {
       renderChart(chartBody, { points: series.points, comparison: previousSeries.points, interval: series.interval })
 
       if (!heatmapHandle) {
-        heatmapHandle = renderHeatmapSection(heatmapSlot, { api, websiteId: website.id, range })
+        // canWrite gates the page-capture uploader: adding a capture changes
+        // what every other viewer of this website sees, so it is an editor
+        // action. The server enforces it too (AccessWrite on PUT/DELETE) —
+        // this only keeps a viewer from being shown a control that would 404.
+        heatmapHandle = renderHeatmapSection(heatmapSlot, {
+          api,
+          websiteId: website.id,
+          range,
+          canWrite: website.access === 'owner' || website.access === 'editor',
+        })
       }
     } catch (err) {
       if (stopped) return

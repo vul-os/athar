@@ -2,7 +2,9 @@
 
 ## Requirements
 
-- To build from source: Go 1.25+ and Node.js 22+.
+- To build from source: Go 1.25+. Node.js 22+ is only needed if you also
+  want to rebuild the tracker from source or embed the marketing mini-site
+  (see below) — the dashboard itself has no build step.
 - To just run a prebuilt binary from [GitHub Releases](https://github.com/vul-os/athar/releases):
   nothing — it's static.
 
@@ -13,15 +15,19 @@
 ```bash
 git clone https://github.com/vul-os/athar.git
 cd athar
-npm install
-npm run build:all   # runs the tracker build, the Vite build, then the Go build
+go build -o athar ./backend/cmd/athar
 ```
 
-This produces `./athar` — a self-contained binary with the dashboard and (if
-present) the marketing mini-site embedded. `npm run build:all` runs three
-steps in order (`scripts/build-tracker.mjs`, `vite build`,
-`scripts/build-binary.mjs`); see [ARCHITECTURE.md](ARCHITECTURE.md#the-embed--build-tag-pattern)
-for what each does.
+This alone produces `./athar` — a self-contained binary with the dashboard
+(hand-written HTML/CSS/JS) and the tracker both embedded via `go:embed`, so
+a Go toolchain is all you need: no Node, no npm install.
+
+For a release build that also rebuilds the tracker from source and embeds
+the marketing mini-site, use `npm run build` instead (requires Node.js
+22+). It runs two steps in order (`scripts/build-tracker.mjs`,
+`scripts/build-binary.mjs`); see
+[ARCHITECTURE.md](ARCHITECTURE.md#the-embed--build-tag-pattern) for what
+each does.
 
 **Or download a release** for your platform (linux/darwin, amd64/arm64;
 windows/amd64) from the [Releases page](https://github.com/vul-os/athar/releases),
@@ -79,7 +85,34 @@ Pageviews should start appearing in the dashboard within a few seconds of
 the first tracked page load — the reporting queries run against live data
 with no batching delay.
 
-## 6. Optional: GeoIP
+## 6. Optional: add a page capture to a heatmap
+
+Once heatmap samples exist for a page (step 5, `data-heatmap="true"`), the
+dashboard's heatmap view can draw the click density field over a real
+picture of that page instead of only a wireframe schematic. This is a
+manual, per-page step — nothing about the tracker changes, and Athar's
+server never fetches the page itself:
+
+1. Open the heatmap view for the page you want, pick the recorded viewport
+   width you're capturing (the picker showing `~1440px wide` etc.).
+2. Take a **full-page** screenshot of that page at that same viewport width
+   — most browsers: developer tools → device toolbar → set the width →
+   "Capture full size screenshot". It has to be the whole page, not just
+   what's visible above the fold, since click positions are stored as
+   percentages of the whole document.
+3. In the "Page capture" panel next to the heatmap, choose the file and
+   upload it (requires editor or owner access to the website).
+
+**Capture the page as a logged-out visitor would see it.** The image is
+stored in this Athar instance's own database and shown to every signed-in
+user of this website's dashboard, so anything on screen when it's
+captured — a real customer's name, a basket, an order — becomes visible to
+all of them too. Without a capture, the heatmap simply shows the wireframe
+schematic, which is honest and requires no action; capturing is optional.
+See [PRIVACY.md](PRIVACY.md#page-captures-the-one-thing-an-operator-not-the-tracker-can-add)
+for the full reasoning.
+
+## 7. Optional: GeoIP
 
 Without a GeoIP database configured, country/region/city fields are simply
 empty — everything else works normally. To enable them, get a

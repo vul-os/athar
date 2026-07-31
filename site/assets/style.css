@@ -21,10 +21,21 @@
        INK. So amber-coloured TEXT (links, the active rail item, the eyebrow)
        resolves to --amber-ink: #9A5710 in the light theme (5.4:1 on the
        paper ground), and to --amber (#E9A23B) itself in the dark theme.
-     --t3 (the faintest text colour) is #807D86 on dark (4.87:1) and #726D64
-       on light (4.93:1) — both were nudged up from a first pass that
-       measured under 4.5:1 and is why this file states the number instead of
-       eyeballing it.
+     --t3 (the faintest text colour) is #948F9B on dark and #6B665E on
+       light — both nudged up across successive passes that measured under
+       4.5:1, which is why this file states the number instead of eyeballing
+       it. t3 is set on --panel and --panel-2 as well as the page background
+       (the chrome address-bar label, the seam-node captions, the docs rail
+       group headers), so the number that has to clear 4.5:1 is the worst of
+       the three, not just t3-on-bg: dark measures 6.24:1 on bg, 5.72:1 on
+       panel, 5.38:1 on panel-2; light measures 5.46:1 on bg, 5.70:1 on
+       panel, 5.06:1 on panel-2. These are the same values site/index.html
+       uses, so the landing and the docs stay one lit surface. An earlier
+       dark value (#807D86) passed
+       against bg (4.87:1) but failed against panel (4.46:1) and panel-2
+       (4.20:1) — exactly the kind of miss a single spot-check against the
+       page background, rather than every surface the colour actually sits
+       on, produces.
 
    CODE — a fixed palette shared across the Vulos suite, independent of page
    theme (the code surface stays dark in both): see the block below `.hljs`.
@@ -32,7 +43,18 @@
    tone (#6B7C93, 4.45:1) — a hair under the floor, kept as specified because
    the palette is shared identically across four sibling projects and
    comments are supporting text, not the content being read for meaning.
+
+   TYPE — identical to the landing: Fraunces (display, headings) / Schibsted
+   Grotesk (body) / IBM Plex Mono (code), all self-hosted under ./fonts, none
+   shared with a sibling Vulos landing's font choice. See site/index.html's
+   stylesheet header for the full rationale.
    ════════════════════════════════════════════════════════════════════════════ */
+
+@font-face{font-family:'Fraunces Variable';font-style:normal;font-weight:100 900;font-display:swap;src:url('./fonts/fraunces-latin-wght-normal.woff2') format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Fraunces Variable';font-style:italic;font-weight:100 900;font-display:swap;src:url('./fonts/fraunces-latin-wght-italic.woff2') format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Schibsted Grotesk Variable';font-style:normal;font-weight:400 900;font-display:swap;src:url('./fonts/schibsted-grotesk-latin-wght-normal.woff2') format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:600;font-display:swap;src:url('./fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
 
 *,*::before,*::after{box-sizing:border-box}
 
@@ -41,25 +63,26 @@
      own #0E0E11 rather than a cold, bluish black. */
   --bg:#0B0B0D; --bg-2:#111114; --panel:#16161A; --panel-2:#1C1C21; --sunken:#08080A;
   --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16); --hair:rgba(255,255,255,.06);
-  --t1:#F5F3EF; --t2:#A6A3AC; --t3:#807D86;
+  --t1:#F5F3EF; --t2:#A6A3AC; --t3:#948F9B;
   --amber:#E9A23B; --amber-ink:#E9A23B;
   --amber-wash:rgba(233,162,59,.12); --amber-edge:rgba(233,162,59,.32); --amber-glow:rgba(233,162,59,.45);
   --err:#FF8A8A; --err-wash:rgba(239,68,68,.10); --err-edge:rgba(239,68,68,.30);
   --ok:#34D399;
   --r:14px; --r-sm:9px; --max:1220px;
   --quick:130ms; --base:220ms; --ease:cubic-bezier(.2,0,.2,1);
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
-  --mono:ui-monospace,SFMono-Regular,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  --display:'Fraunces Variable',ui-serif,Georgia,'Times New Roman',serif;
+  --sans:'Schibsted Grotesk Variable',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
   color-scheme:dark;
 }
 :root[data-theme=light]{
   --bg:#FBFAF8; --bg-2:#F4F1EC; --panel:#FFFFFF; --panel-2:#F4F1EC; --sunken:#EFEBE3;
   --line:#E4DFD5; --line-2:#D6CFC0; --hair:rgba(20,18,14,.06);
-  --t1:#16151A; --t2:#5B5750; --t3:#726D64;
+  --t1:#16151A; --t2:#5B5750; --t3:#6B665E;
   --amber-ink:#9A5710;
   --amber-wash:#FBF1E3; --amber-edge:rgba(154,87,16,.28); --amber-glow:rgba(233,162,59,.35);
   --err:#C81E1E; --err-wash:rgba(200,30,30,.07); --err-edge:rgba(200,30,30,.26);
-  --ok:#0F8F5F;
+  --ok:#0C7049;
   color-scheme:light;
 }
 
@@ -97,7 +120,7 @@ svg{display:block}
   border-bottom:1px solid var(--line);
 }
 .nav{display:flex;align-items:center;gap:18px;height:64px}
-.brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.03em;font-size:18.5px;flex:none;color:var(--t1)}
+.brand{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;letter-spacing:-.02em;font-size:19px;flex:none;color:var(--t1)}
 .brand .tile{
   width:30px;height:30px;border-radius:9px;display:block;flex:none;
   box-shadow:0 4px 14px -5px var(--amber-glow);
@@ -113,16 +136,17 @@ svg{display:block}
 .nav-act{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
 .nav-links+.nav-act{margin-left:14px}
 .iconbtn{
-  width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--panel);
+  width:44px;height:44px;border-radius:11px;border:1px solid var(--line);background:var(--panel);
   display:grid;place-items:center;color:var(--t2);flex:none;
   transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease);
 }
 .iconbtn:hover{color:var(--t1);border-color:var(--line-2)}
 .iconbtn svg{width:17px;height:17px}
+.iconbtn.vulos-btn img{width:18px;height:18px;border-radius:4px;display:block}
 :root[data-theme=light] .moon{display:none}
 :root[data-theme=dark] .sun{display:none}
 .ghlink{
-  display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:9px;
+  display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 13px;border-radius:11px;
   border:1px solid var(--line);background:var(--panel);font-size:14px;font-weight:600;color:var(--t2);
   transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease);
 }
@@ -152,7 +176,7 @@ svg{display:block}
 .docs-nav .grp{padding:12px 12px 4px;font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);font-weight:800}
 .docs-nav .grp:first-child{padding-top:8px}
 .docs-nav a{
-  display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;color:var(--t2);
+  display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:8px;color:var(--t2);min-height:44px;
   font-size:14.5px;font-weight:550;transition:color var(--quick) var(--ease),background var(--quick) var(--ease);
 }
 .docs-nav a:hover{background:var(--panel-2);color:var(--t1)}
@@ -180,7 +204,7 @@ svg{display:block}
 /* ── Markdown body ───────────────────────────────────────────────────────── */
 .markdown{font-size:16.2px;min-width:0}
 .markdown>*:first-child{margin-top:0}
-.markdown h1,.markdown h2,.markdown h3,.markdown h4{letter-spacing:-.028em;font-weight:800;line-height:1.15;scroll-margin-top:80px}
+.markdown h1,.markdown h2,.markdown h3,.markdown h4{font-family:var(--display);letter-spacing:-.02em;font-weight:650;line-height:1.15;scroll-margin-top:80px}
 .markdown h1{font-size:clamp(28px,4.2vw,38px);margin:.2em 0 .5em;padding-bottom:.32em;border-bottom:1px solid var(--line)}
 .markdown h2{font-size:clamp(21px,3vw,26px);margin:1.8em 0 .6em;padding-bottom:.26em;border-bottom:1px solid var(--line)}
 .markdown h3{font-size:19px;margin:1.6em 0 .5em}

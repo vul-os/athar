@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Derived verbatim from brand/logo.svg (the suite's single source of
+       truth for every icon) — same viewBox, same three offset rings, same
+       colours. Do not hand-edit this drawing; regenerate it from
+       brand/logo.svg if that mark ever changes. -->
   <title>Athar</title>
-  <!-- Three offset rings, densest at the point of contact and fading outward:
-       a trace spreading from where something landed. أثر means both "trace" and
-       "impact", and the mark is meant to read as either. -->
   <rect width="64" height="64" rx="15" fill="#0E0E11"/>
   <circle cx="32" cy="32" r="6" fill="#E9A23B"/>
   <circle cx="32" cy="32" r="14" fill="none" stroke="#E9A23B" stroke-opacity="0.55" stroke-width="3"/>

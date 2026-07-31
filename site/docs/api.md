@@ -77,6 +77,22 @@ Top-N breakdown. `?metric=` one of: `path, entry_path, exit_path, referrer, brow
 ### `GET /api/websites/{id}/revenue`
 `{ totals: [{ currency, amount_minor }] }`. See [Ecommerce](./ecommerce.md).
 
+## Page captures
+
+The operator-uploaded backdrop the click heatmap composites under the density field — see [Heatmaps](./heatmaps.md#page-captures). All four routes are keyed by `?path=` (a page path starting with `/`) and `?viewport=` (the CSS-pixel viewport width the capture was taken at, 200–8000); together they address one row in the `page_images` table. **The stored format is decided by decoding the uploaded bytes, never by the request's `Content-Type` header.**
+
+### `GET /api/websites/{id}/page-images`
+Requires at least `viewer` access. Lists every capture for the website, metadata only (`path, viewport_w, image_w, image_h, mime, bytes, created_at`) — no image bytes, so listing fifty captures doesn't transfer fifty images.
+
+### `GET /api/websites/{id}/page-image`
+Requires at least `viewer` access. `?path=&viewport=`. Serves the stored image bytes with `Content-Type` set to the decoded format, `Content-Security-Policy: default-src 'none'; sandbox`, `Cache-Control: private, no-cache`, and an `ETag` for conditional `GET`s (`If-None-Match` → `304`). `404` if no capture matches that page and viewport.
+
+### `PUT /api/websites/{id}/page-image`
+Requires `editor` access, and CSRF like every other write. `?path=&viewport=`. Body is the raw image bytes (PNG or JPEG, up to 8 MiB). Rejects anything `image.DecodeConfig` can't decode as PNG or JPEG regardless of the declared `Content-Type` — an SVG or an HTML document renamed to `.png` is refused rather than stored. One capture per (website, path, viewport width): uploading again for the same key **replaces** it rather than accumulating a new row. Returns the same metadata shape `GET .../page-images` lists.
+
+### `DELETE /api/websites/{id}/page-image`
+Requires `editor` access, and CSRF. `?path=&viewport=`. Removes the capture for that page and viewport; `404` if none exists.
+
 ## Users (admin only)
 
 `GET /api/users`, `POST /api/users` (`{ username, password, role }`), `DELETE /api/users/{id}` — all require the instance `admin` role. Deleting your own account is refused: bootstrap only works on an empty instance, so an admin-less instance with users already in it would have no way to make a new one.

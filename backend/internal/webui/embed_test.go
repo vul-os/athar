@@ -41,6 +41,7 @@ var assetFloors = map[string]int{
 	"theme-init.js": 600,
 	"api.js":        2000,
 	"dom.js":        1000,
+	"favicon.svg":   400,
 }
 
 func TestEmbeddedAssetsArePresent(t *testing.T) {
@@ -81,6 +82,48 @@ func TestEmbeddedHTMLHasRequiredElements(t *testing.T) {
 		if !strings.Contains(html, want) {
 			t.Errorf("embedded index.html does not contain %q — the dashboard is missing something it needs", want)
 		}
+	}
+}
+
+// TestFaviconIsEmbeddedAndReferenced guards the regression this file was
+// extended for: the React-to-vanilla rewrite dropped the whole PWA (manifest,
+// service worker, PNG icon set) and took the favicon down with it, leaving an
+// operator with a blank browser-tab icon. The favicon was brought back as its
+// own embedded, same-origin static/favicon.svg (derived from brand/logo.svg,
+// not a data: URI — see the comment above the <link> in index.html) so it is
+// a real, servable, verifiable asset like every other file here.
+//
+// Either half of this going missing independently would leave the tab blank
+// while looking "fine" some other way, so both are asserted:
+//   - the asset itself must actually be embedded (checked here byte-for-byte
+//     rather than relying only on assetFloors, so this test fails even if the
+//     entry above it were ever deleted from that map);
+//   - index.html must reference it by exactly the href the file server
+//     expects, or the embed can be perfectly intact while nothing links to
+//     it and the tab stays blank regardless.
+//
+// It also asserts the reference is a same-origin link, not a reintroduced
+// data: URI — the earlier, inline-only favicon this replaced could never be
+// verified with a real HTTP request (no request is ever made for a data:
+// URI), which is part of why it was replaced.
+func TestFaviconIsEmbeddedAndReferenced(t *testing.T) {
+	svg, err := Asset("favicon.svg")
+	if err != nil {
+		t.Fatalf("embedded favicon.svg missing: %v — the browser tab icon would be blank again", err)
+	}
+	if !strings.Contains(string(svg), "<svg") {
+		t.Fatalf("embedded favicon.svg (%d bytes) does not look like an SVG document", len(svg))
+	}
+
+	html := string(HTML())
+	const wantLink = `<link rel="icon" type="image/svg+xml" href="/favicon.svg">`
+	if !strings.Contains(html, wantLink) {
+		t.Errorf("embedded index.html does not contain %q — favicon.svg is embedded but nothing links to it, "+
+			"so the tab icon is still blank", wantLink)
+	}
+	if strings.Contains(html, `href="data:image/svg+xml`) {
+		t.Errorf("embedded index.html links the favicon via a data: URI — that can't be served or verified " +
+			"like a real asset; use the embedded static/favicon.svg via a same-origin href instead")
 	}
 }
 
@@ -149,5 +192,70 @@ func TestNoSystemFontOverrideViaExternalFace(t *testing.T) {
 	}
 	if strings.Contains(strings.ToLower(string(css)), "@font-face") {
 		t.Errorf("ui.css declares an @font-face — the dashboard is meant to ship zero font files/fetches and use the system font stack")
+	}
+}
+
+// TestPageCaptureUploaderShipsWithItsPrivacyStatement guards the specific
+// drift this feature introduces.
+//
+// Athar's whole claim is that nothing about a page's content is ever
+// collected, and that claim survives the heatmap's page-capture backdrop for
+// exactly one reason: the picture is something an operator deliberately
+// uploaded, and the dashboard tells them, at the moment they upload it, that
+// every viewer of the website will see whatever is in it. The upload control
+// and that sentence are one thing. Shipping the control without the sentence
+// would leave a privacy-first product quietly collecting screenshots of
+// customer-facing pages into a shared database with nobody warned.
+//
+// So this asserts they travel together, in the same file, rather than trusting
+// that nobody will ever tidy the "wordy" paragraph out of the panel.
+func TestPageCaptureUploaderShipsWithItsPrivacyStatement(t *testing.T) {
+	heatmap, err := Asset("heatmap.js")
+	if err != nil {
+		t.Fatalf("heatmap.js missing: %v", err)
+	}
+	js := string(heatmap)
+
+	hasUploader := strings.Contains(js, "putPageImage") && strings.Contains(js, "type: 'file'")
+	if !hasUploader {
+		t.Fatal("heatmap.js no longer contains the page-capture uploader — if the feature was removed, " +
+			"remove this test and the privacy copy with it; if it moved, move this assertion with it")
+	}
+
+	// Each of these is a distinct promise the panel makes, and each is one an
+	// edit could drop on its own.
+	for _, want := range []string{
+		"capture-privacy",                    // the note is rendered, not just written
+		"no DOM, no text and no form values", // what is still never collected
+		"this server never fetches your site",
+		"stored in your own database",
+		"logged-out visitor", // the actionable instruction
+	} {
+		if !strings.Contains(js, want) {
+			t.Errorf("heatmap.js ships a page-capture uploader but no longer says %q — "+
+				"the upload control and its privacy consequence must not be separable", want)
+		}
+	}
+}
+
+// TestHeatmapHeaderDoesNotClaimNoScreenshotExists is the counterpart: the file
+// used to state, in its own header comment, that no page screenshot is ever
+// captured. That was true, and then it stopped being true. A comment that
+// confidently describes behaviour the code no longer has is worse than no
+// comment, because it is what the next reader will believe.
+func TestHeatmapHeaderDoesNotClaimNoScreenshotExists(t *testing.T) {
+	heatmap, err := Asset("heatmap.js")
+	if err != nil {
+		t.Fatalf("heatmap.js missing: %v", err)
+	}
+	js := strings.ToLower(string(heatmap))
+	for _, stale := range []string{
+		"no page screenshot is ever captured",
+		"deliberately no page screenshot",
+	} {
+		if strings.Contains(js, stale) {
+			t.Errorf("heatmap.js still says %q, but the click map now draws over an operator-uploaded "+
+				"capture — update the comment rather than leaving it to mislead", stale)
+		}
 	}
 }

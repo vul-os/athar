@@ -2,7 +2,10 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"runtime"
@@ -860,6 +863,117 @@ func (s *sqlStore) RevenueSummary(ctx context.Context, websiteID string, rg Rang
 		out[cur] = amt
 	}
 	return out, rows.Err()
+}
+
+// ── Page images ───────────────────────────────────────────────────────────────
+
+// PutPageImage stores (or replaces) the capture for one page at one viewport
+// width. Replace rather than accumulate: the unique index makes a second upload
+// for the same key a conflict, and an operator re-capturing a redesigned page
+// means "this is the page now", not "keep both".
+//
+// Delete-then-insert inside one transaction rather than an upsert: `ON CONFLICT
+// … DO UPDATE` is spelled differently enough between the engines to be a portability
+// trap, and this is not a hot path — it runs when a human uploads a screenshot.
+func (s *sqlStore) PutPageImage(ctx context.Context, img *PageImage) error {
+	if img == nil {
+		return errors.New("store: PutPageImage requires an image")
+	}
+	if len(img.Bytes) == 0 {
+		return errors.New("store: PutPageImage requires image bytes")
+	}
+	if len(img.Bytes) > maxPageImageBytes {
+		return fmt.Errorf("store: page image is %d bytes, limit is %d", len(img.Bytes), maxPageImageBytes)
+	}
+	if img.ID == "" {
+		img.ID = NewID()
+	}
+	if img.CreatedAt.IsZero() {
+		img.CreatedAt = time.Now().UTC()
+	}
+	if img.SHA256 == "" {
+		sum := sha256.Sum256(img.Bytes)
+		img.SHA256 = hex.EncodeToString(sum[:])
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	del := s.q(`DELETE FROM page_images WHERE website_id = ? AND url_path = ? AND viewport_w = ?`)
+	if _, err := tx.ExecContext(ctx, del, img.WebsiteID, truncate(img.URLPath, maxPathField), img.ViewportW); err != nil {
+		return mapErr(err)
+	}
+	ins := s.q(`INSERT INTO page_images
+		(id, website_id, url_path, viewport_w, image_w, image_h, mime, byte_len, sha256, data_b64, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+	if _, err := tx.ExecContext(ctx, ins, img.ID, img.WebsiteID, truncate(img.URLPath, maxPathField),
+		img.ViewportW, img.ImageW, img.ImageH, truncate(img.MIME, 64), len(img.Bytes), img.SHA256,
+		base64.StdEncoding.EncodeToString(img.Bytes), toMillis(img.CreatedAt)); err != nil {
+		return mapErr(err)
+	}
+	return tx.Commit()
+}
+
+func (s *sqlStore) GetPageImage(ctx context.Context, websiteID, urlPath string, viewportW int) (*PageImage, error) {
+	row := s.db.QueryRowContext(ctx, s.q(
+		`SELECT id, website_id, url_path, viewport_w, image_w, image_h, mime, sha256, data_b64, created_at
+		 FROM page_images WHERE website_id = ? AND url_path = ? AND viewport_w = ?`),
+		websiteID, urlPath, viewportW)
+
+	var img PageImage
+	var b64 string
+	var createdMS int64
+	if err := row.Scan(&img.ID, &img.WebsiteID, &img.URLPath, &img.ViewportW, &img.ImageW, &img.ImageH,
+		&img.MIME, &img.SHA256, &b64, &createdMS); err != nil {
+		return nil, mapErr(err)
+	}
+	raw, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, fmt.Errorf("store: page image %s is not valid base64: %w", img.ID, err)
+	}
+	img.Bytes = raw
+	img.CreatedAt = fromMillis(createdMS)
+	return &img, nil
+}
+
+// ListPageImages returns every capture for a website, metadata only. The bytes
+// are deliberately not selected: a dashboard asking "which pages have a capture?"
+// would otherwise pull every megabyte in the table to answer a boolean.
+func (s *sqlStore) ListPageImages(ctx context.Context, websiteID string) ([]PageImageMeta, error) {
+	rows, err := s.db.QueryContext(ctx, s.q(
+		`SELECT url_path, viewport_w, image_w, image_h, mime, sha256, byte_len, created_at
+		 FROM page_images WHERE website_id = ? ORDER BY url_path, viewport_w`), websiteID)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	defer rows.Close()
+
+	out := []PageImageMeta{}
+	for rows.Next() {
+		var m PageImageMeta
+		var createdMS int64
+		if err := rows.Scan(&m.URLPath, &m.ViewportW, &m.ImageW, &m.ImageH, &m.MIME, &m.SHA256, &m.ByteLen, &createdMS); err != nil {
+			return nil, err
+		}
+		m.CreatedAt = fromMillis(createdMS)
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+func (s *sqlStore) DeletePageImage(ctx context.Context, websiteID, urlPath string, viewportW int) error {
+	res, err := s.exec(ctx, `DELETE FROM page_images WHERE website_id = ? AND url_path = ? AND viewport_w = ?`,
+		websiteID, urlPath, viewportW)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
 }
 
 // ── Retention ─────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
-import { el, svgEl, clear } from './dom.js'
-import { count, duration } from './format.js'
+import { el, clear } from './dom.js'
+import { count, duration, bytes as formatBytes } from './format.js'
 import { mountHeatCanvas } from './heatcanvas.js'
 
 /**
@@ -11,44 +11,51 @@ import { mountHeatCanvas } from './heatcanvas.js'
  *   Scroll    how far down did they get before leaving?
  *   Attention where did they linger rather than pass through?
  *
- * ── Why clicks render over a wireframe, not a blank canvas ──────────────────
+ * ── What the click map is drawn over ────────────────────────────────────────
  *
- * The tracker (backend/internal/tracker/athar.js) never captures the page
- * itself: no DOM snapshot, no screenshot, no HTML, no text. It records three
- * things per click — an (x, y) position as a percentage of the *document*,
- * the viewport size at the time, and a short CSS selector for the element
- * pressed (see `selectorFor` in athar.js). That is a deliberate privacy
- * boundary, not an oversight, and this view does not try to paper over it
- * with a fabricated screenshot.
+ * Over the page, when there is a picture of the page to draw over — and over a
+ * wireframe schematic, clearly labelled as one, when there is not.
  *
- * What it draws instead is reconstructed *from that same recorded data*: for
- * every selector that was actually clicked, the bounding box of every (x, y)
- * where it was clicked becomes a labelled dashed rectangle, in the exact
- * coordinate space the heat canvas already plots in — so a box drawn from
- * "sel=nav a.nav-link, seen at x=48-52%, y=3-5%" and the hot spot the canvas
- * paints there are the same clicks, guaranteed aligned by construction. That
- * is honest in a way a generic lorem-ipsum skeleton would not be: every box
- * on screen corresponds to real recorded interactions, labelled with the
- * real selector, sized to the real observed spread — never to an assumed
- * page layout. Where nothing was recorded, nothing is drawn.
+ * The picture is never captured by Athar. The tracker records three things per
+ * click (an x/y position as a percentage of the *document*, the viewport size,
+ * and a short CSS selector) and nothing about the page's content: no DOM
+ * snapshot, no HTML, no text, no form values. That boundary has not moved. What
+ * moved is that an operator can now upload a capture of their own page, keyed to
+ * one page and one viewport width, which this view composites underneath the
+ * heat field. See backend/internal/api/pageimages.go for why upload beat both
+ * tracker-side DOM capture and server-side rendering.
  *
- * The frame is sized to the recorded viewport's aspect ratio, and a picker
- * lets an operator narrow to one recorded viewport width when more than one
- * was seen (a page that renders very differently at 390px and 1440px should
- * not have those clicks smeared into one average shape).
+ * ── Why the overlay lands where the click landed ────────────────────────────
  *
- * ── What it would take to show the real page instead ─────────────────────
+ * Because both sides are proportions of the same document. The tracker divides
+ * pageX by documentElement.scrollWidth and pageY by the full document height; a
+ * full-page capture at viewport width W is exactly one document wide and one
+ * document tall. So the frame takes its aspect ratio from the *image*, the heat
+ * canvas fills that same box, and a sample at (x%, y%) of the box is the pixel
+ * that was pressed — independent of display size and of the capture's device
+ * pixel ratio, since a 2× capture is the same document at twice the samples per
+ * CSS pixel.
  *
- * To composite the heat field over an actual screenshot of the page as it
- * looked when clicked, the tracker would need to capture and upload a visual
- * snapshot (e.g. a DOM-to-canvas render, or a same-origin screenshot API) at
- * beacon time, keyed to the page's markup revision so old samples do not get
- * misaligned against a redesigned layout, and the backend would need to
- * store and serve that image per (site, path, revision) with its own
- * retention policy. That is real, invasive, roadmap-sized work (something
- * closer to rrweb), and it is deliberately not what Athar collects today —
- * see the tracker's own doc comment on why nothing about page content is
- * ever captured.
+ * Two ways that could go wrong, both guarded rather than assumed:
+ *
+ *   - An above-the-fold capture instead of a full-page one. Its aspect ratio is
+ *     the viewport's rather than the document's, so everything below the fold
+ *     would be crushed into the visible screen. checkAlignment() compares the
+ *     image's ratio against the recorded viewport's and says so plainly.
+ *   - Mixing viewport widths. A page laid out at 390px and one at 1440px are
+ *     different documents; averaging their clicks onto one image is a lie that
+ *     looks authoritative. An image is keyed by viewport width, and one is only
+ *     shown when a single recorded viewport bucket is selected — "All viewports"
+ *     always gets the schematic.
+ *
+ * ── When there is no image ─────────────────────────────────────────────────
+ *
+ * The wireframe: for every selector actually clicked, the bounding box of every
+ * (x, y) where it was clicked, in the same coordinate space the heat canvas
+ * plots in. Every box corresponds to real recorded interactions, labelled with
+ * the real selector, sized to the real observed spread. It is captioned
+ * "Schematic", never presented as the page, and a stale image for a different
+ * viewport is never substituted for a missing one.
  */
 const MODES = [
   { kind: 'click', label: 'Clicks', blurb: 'Where visitors pressed, as a density field over the page.' },
@@ -58,12 +65,18 @@ const MODES = [
 
 const TOP_ELEMENTS_LIMIT = 8
 
-export function renderHeatmapSection(container, { api, websiteId, range }) {
+/** Widths within this many pixels of each other are one device class. */
+const VIEWPORT_BUCKET_PX = 150
+
+export function renderHeatmapSection(container, { api, websiteId, range, canWrite = false }) {
   let kind = 'click'
   let path = null
-  let viewportBucket = 'all'
+  // null means "choose for me": the first bucket that has a page capture, else
+  // all viewports. An explicit choice by the operator is preserved.
+  let viewportBucket = null
   let gen = 0
   let canvasHandle = null
+  let pageImages = []
 
   const section = el('section', { class: 'panel heatmap' })
   const header = el('header', { class: 'heatmap-header' })
@@ -104,6 +117,23 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
     }
   }
 
+  /**
+   * Loads the page-capture index. Metadata only — the bytes arrive later via an
+   * <img src>, and only for the one image actually shown, so a site with fifty
+   * captures does not pay for forty-nine it is not looking at.
+   */
+  async function loadPageImages() {
+    try {
+      const data = await api.pageImages(websiteId)
+      pageImages = (data && data.images) || []
+    } catch {
+      // A missing index is not a reason to fail the whole view: the click map
+      // degrades to the schematic, which is exactly what it did before images
+      // existed.
+      pageImages = []
+    }
+  }
+
   async function loadPages() {
     try {
       const data = await api.metrics(websiteId, 'path', range, 25)
@@ -126,7 +156,7 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
   }
   pageSelect.addEventListener('change', () => {
     path = pageSelect.value
-    viewportBucket = 'all'
+    viewportBucket = null
     loadHeat()
   })
 
@@ -175,13 +205,23 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
 
   function renderClickMap(root, allSamples, currentPath) {
     const buckets = bucketizeViewports(allSamples)
+    const imagesHere = pageImages.filter((img) => img.path === currentPath)
     let samples = allSamples
+
+    // Resolve "choose for me" once per render: land on a viewport that has a
+    // real page under it when one exists, so the default view is the good one
+    // rather than the schematic.
+    if (viewportBucket === null) {
+      const withImage = buckets.find((b) => imageForBucket(imagesHere, b))
+      viewportBucket = withImage ? String(withImage.key) : buckets.length === 1 ? String(buckets[0].key) : 'all'
+    }
 
     const wrap = el('div', { class: 'heatmap-grid' })
     const left = el('div', null)
     const right = el('div', null)
 
     const frameOuter = el('div', { class: 'heat-frame-outer' })
+    const backdropBadge = el('span', { class: 'heat-badge' })
     const topbar = el(
       'div',
       { class: 'heat-topbar' },
@@ -189,10 +229,13 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
       el('span', { class: 'heat-topbar-dot' }),
       el('span', { class: 'heat-topbar-dot' }),
       el('span', { class: 'heat-topbar-path mono', title: currentPath }, currentPath),
+      backdropBadge,
     )
     const frame = el('div', { class: 'heat-frame' })
+    const pageLayer = el('div', { class: 'heat-page-layer' })
     const wireLayer = el('div', { class: 'heat-wire-layer' })
     const canvasLayer = el('div', { class: 'heat-canvas-layer' })
+    frame.appendChild(pageLayer)
     frame.appendChild(wireLayer)
     frame.appendChild(canvasLayer)
     frameOuter.appendChild(topbar)
@@ -208,19 +251,37 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
     footRow.appendChild(rampLegend())
     left.appendChild(footRow)
 
+    // The viewport picker appears whenever any viewport was recorded, not only
+    // when several were: with page captures it is also the control that chooses
+    // which capture you are looking at, so hiding it on a single-viewport site
+    // would hide the backdrop switch too.
     let vpSelect = null
-    if (buckets.length > 1) {
+    if (buckets.length > 0) {
       vpSelect = el('select', { class: 'select heat-viewport-select', 'aria-label': 'Recorded viewport width' })
-      vpSelect.appendChild(el('option', { value: 'all' }, `All viewports (${allSamples.length} samples)`))
-      for (const b of buckets) {
-        vpSelect.appendChild(el('option', { value: String(b.key) }, `~${b.key}px wide (${b.samples.length} samples)`))
+      if (buckets.length > 1) {
+        vpSelect.appendChild(el('option', { value: 'all' }, `All viewports (${allSamples.length} samples)`))
       }
+      for (const b of buckets) {
+        const img = imageForBucket(imagesHere, b)
+        vpSelect.appendChild(
+          el(
+            'option',
+            { value: String(b.key) },
+            `~${b.label}px wide (${b.samples.length} samples)${img ? ' · page capture' : ''}`,
+          ),
+        )
+      }
+      vpSelect.value = viewportBucket
       vpSelect.addEventListener('change', () => {
         viewportBucket = vpSelect.value
         paint()
       })
-      const pickerRow = el('div', { class: 'heat-viewport-row' },
-        el('label', { class: 'heat-viewport-label' }, 'Viewport'), vpSelect)
+      const pickerRow = el(
+        'div',
+        { class: 'heat-viewport-row' },
+        el('label', { class: 'heat-viewport-label' }, 'Viewport'),
+        vpSelect,
+      )
       left.insertBefore(pickerRow, frameOuter)
     }
 
@@ -235,53 +296,94 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
         'Selectors are recorded alongside coordinates, so a click map still means something after the page is redesigned.',
       ),
     )
+    const captureSlot = el('div', null)
+    right.appendChild(captureSlot)
 
     wrap.appendChild(left)
     wrap.appendChild(right)
     root.appendChild(wrap)
 
     let handle = null
+    let imgEl = null
 
     function paint() {
-      samples = viewportBucket === 'all' ? allSamples : (buckets.find((b) => String(b.key) === viewportBucket) || {}).samples || allSamples
+      const bucket = buckets.find((b) => String(b.key) === viewportBucket) || null
+      samples = bucket ? bucket.samples : allSamples
+      const image = bucket ? imageForBucket(imagesHere, bucket) : null
 
-      // Aspect ratio from the active sample set's recorded viewports — a
-      // mostly-mobile filter renders tall, a desktop one wide.
       const withViewport = samples.filter((s) => s.vw > 0 && s.vh > 0)
-      let ratio = 16 / 10
-      if (withViewport.length) {
-        const mean = withViewport.reduce((sum, s) => sum + s.vw / s.vh, 0) / withViewport.length
-        ratio = Math.min(2, Math.max(0.5, mean))
-      }
-      frame.style.aspectRatio = String(ratio)
+      const meanW = withViewport.length ? Math.round(withViewport.reduce((s, v) => s + v.vw, 0) / withViewport.length) : 0
+      const meanH = withViewport.length ? Math.round(withViewport.reduce((s, v) => s + v.vh, 0) / withViewport.length) : 0
 
-      // Wireframe: bounding box per selector, built only from real recorded
-      // coordinates for the active sample set.
+      clear(pageLayer)
       clear(wireLayer)
-      const boxes = selectorBoxes(samples)
-      for (const box of boxes) {
-        wireLayer.appendChild(
-          el(
-            'div',
-            {
-              class: 'wireframe-box',
-              style: `left:${box.x0}%;top:${box.y0}%;width:${Math.max(box.x1 - box.x0, 3)}%;height:${Math.max(box.y1 - box.y0, 2.2)}%`,
-              title: `${box.selector} — ${box.count} click${box.count === 1 ? '' : 's'}`,
-            },
-            el('span', { class: 'wireframe-box-label mono' }, box.selector),
-          ),
-        )
+      imgEl = null
+
+      if (image) {
+        // The frame becomes the document's shape, because that is the space the
+        // samples are percentages of. Nothing else in this function needs to
+        // know about scale: the canvas fills the same box.
+        frame.style.aspectRatio = String(image.image_w / image.image_h)
+        frame.classList.add('has-page')
+        imgEl = el('img', {
+          class: 'heat-page-img',
+          src: api.pageImageURL(websiteId, currentPath, image.viewport_w),
+          alt: `Capture of ${currentPath} at ${image.viewport_w}px wide`,
+          decoding: 'async',
+        })
+        pageLayer.appendChild(imgEl)
+        backdropBadge.textContent = 'Page capture'
+        backdropBadge.className = 'heat-badge heat-badge-real'
+      } else {
+        // The schematic's frame keeps the recorded viewport's proportions; its
+        // vertical axis is still the whole document, which the caption says.
+        let ratio = 16 / 10
+        if (withViewport.length) {
+          const mean = withViewport.reduce((sum, s) => sum + s.vw / s.vh, 0) / withViewport.length
+          ratio = Math.min(2, Math.max(0.5, mean))
+        }
+        frame.style.aspectRatio = String(ratio)
+        frame.classList.remove('has-page')
+        backdropBadge.textContent = 'Schematic'
+        backdropBadge.className = 'heat-badge heat-badge-schematic'
+
+        for (const box of selectorBoxes(samples)) {
+          wireLayer.appendChild(
+            el(
+              'div',
+              {
+                class: 'wireframe-box',
+                style: `left:${box.x0}%;top:${box.y0}%;width:${Math.max(box.x1 - box.x0, 3)}%;height:${Math.max(box.y1 - box.y0, 2.2)}%`,
+                title: `${box.selector} — ${box.count} click${box.count === 1 ? '' : 's'}`,
+              },
+              el('span', { class: 'wireframe-box-label mono' }, box.selector),
+            ),
+          )
+        }
       }
 
       if (handle) handle.destroy()
       handle = mountHeatCanvas(canvasLayer)
       handle.setSamples(samples.filter((s) => typeof s.x === 'number' && typeof s.y === 'number'))
 
-      const meanW = withViewport.length ? Math.round(withViewport.reduce((s, v) => s + v.vw, 0) / withViewport.length) : 0
-      const meanH = withViewport.length ? Math.round(withViewport.reduce((s, v) => s + v.vh, 0) / withViewport.length) : 0
-      caption.textContent =
-        (meanW && meanH ? `Schematic at ~${meanW}×${meanH}px — ` : 'Schematic — ') +
-        'reconstructed from recorded click positions and selectors. No page screenshot is ever captured.'
+      clear(caption)
+      if (image) {
+        caption.appendChild(
+          el(
+            'span',
+            null,
+            `Real page — a capture of ${currentPath} at ${image.viewport_w}px wide, uploaded ${shortDate(image.created_at)}. `,
+            'Click positions are percentages of the document and this capture is one document tall, so every point sits where it was pressed.',
+          ),
+        )
+        const warning = checkAlignment(image, meanW, meanH)
+        if (warning) caption.appendChild(el('span', { class: 'heat-caption-warn' }, ` ${warning}`))
+      } else {
+        caption.textContent =
+          (meanW ? `Schematic at ~${meanW}px wide — ` : 'Schematic — ') +
+          'not a picture of the page. Boxes are the bounding box of each selector’s own recorded clicks, ' +
+          'and the vertical axis is the whole document, not one screen.'
+      }
 
       clickCountEl.textContent = `${count(samples.length)} clicks`
 
@@ -312,6 +414,20 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
           )
         }
       }
+
+      renderCapturePanel(captureSlot, {
+        api,
+        websiteId,
+        canWrite,
+        path: currentPath,
+        image,
+        bucket,
+        suggestedWidth: meanW || (bucket ? bucket.label : 0),
+        onChanged: async () => {
+          await loadPageImages()
+          loadHeat()
+        },
+      })
     }
 
     paint()
@@ -414,12 +530,221 @@ export function renderHeatmapSection(container, { api, websiteId, range }) {
 
   paintModeBar()
   blurb.textContent = MODES[0].blurb
-  loadPages()
+  loadPageImages().then(loadPages)
 
   return {
     destroy() {
       if (canvasHandle) canvasHandle.destroy()
     },
+  }
+}
+
+// ── Page captures ────────────────────────────────────────────────────────────
+
+/**
+ * The panel that explains — and, for an editor, changes — what is under the
+ * heat field.
+ *
+ * The privacy note is not decoration and does not hide behind a disclosure
+ * triangle. Athar's claim is that nothing about a page's content is ever
+ * collected, and that claim survives this feature only because the capture is
+ * something a human deliberately uploads. Anyone who can put an image here needs
+ * to know, at the moment they do it, that they are choosing what every other
+ * dashboard user of this website will see.
+ */
+function renderCapturePanel(slot, { api, websiteId, canWrite, path, image, bucket, suggestedWidth, onChanged }) {
+  clear(slot)
+  const panel = el('div', { class: 'capture-panel' })
+  panel.appendChild(el('h3', { class: 'heatmap-side-title' }, 'Page capture'))
+
+  if (image) {
+    panel.appendChild(
+      el(
+        'p',
+        { class: 'capture-status' },
+        el('span', { class: 'capture-status-dot is-on' }),
+        `${image.image_w}×${image.image_h}, ${formatBytes(image.bytes)}, captured at ${image.viewport_w}px wide.`,
+      ),
+    )
+  } else if (bucket) {
+    panel.appendChild(
+      el(
+        'p',
+        { class: 'capture-status' },
+        el('span', { class: 'capture-status-dot' }),
+        `No capture for ~${bucket.label}px. The map below is a schematic.`,
+      ),
+    )
+  } else {
+    panel.appendChild(
+      el(
+        'p',
+        { class: 'capture-status' },
+        el('span', { class: 'capture-status-dot' }),
+        'Pick a single viewport width above to attach or view a capture. A capture is never shown across mixed viewports — the same page laid out at 390px and 1440px is not the same picture.',
+      ),
+    )
+    slot.appendChild(panel)
+    return
+  }
+
+  if (!canWrite) {
+    panel.appendChild(
+      el('p', { class: 'capture-note' }, 'Only an editor or owner of this website can add or remove a capture.'),
+    )
+    slot.appendChild(panel)
+    return
+  }
+
+  const status = el('p', { class: 'capture-feedback' })
+  const widthInput = el('input', {
+    class: 'text-input capture-width',
+    type: 'number',
+    min: '200',
+    max: '8000',
+    step: '1',
+    value: String(image ? image.viewport_w : suggestedWidth || 1440),
+    'aria-label': 'Viewport width the capture was taken at, in CSS pixels',
+  })
+  const fileInput = el('input', {
+    class: 'capture-file',
+    type: 'file',
+    accept: 'image/png,image/jpeg',
+    'aria-label': 'Full-page capture of this page (PNG or JPEG)',
+  })
+
+  const uploadBtn = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn btn-primary btn-sm',
+      onclick: async () => {
+        const file = fileInput.files && fileInput.files[0]
+        if (!file) {
+          status.textContent = 'Choose a PNG or JPEG first.'
+          status.className = 'capture-feedback is-error'
+          return
+        }
+        const vw = Number(widthInput.value)
+        if (!Number.isFinite(vw) || vw < 200 || vw > 8000) {
+          status.textContent = 'Viewport width must be between 200 and 8000 CSS pixels.'
+          status.className = 'capture-feedback is-error'
+          return
+        }
+        uploadBtn.disabled = true
+        status.textContent = 'Uploading…'
+        status.className = 'capture-feedback'
+        try {
+          await api.putPageImage(websiteId, path, vw, file)
+          await onChanged()
+        } catch (err) {
+          uploadBtn.disabled = false
+          status.textContent = (err && err.message) || 'Upload failed.'
+          status.className = 'capture-feedback is-error'
+        }
+      },
+    },
+    image ? 'Replace capture' : 'Upload capture',
+  )
+
+  const row = el('div', { class: 'capture-row' }, fileInput, el('div', { class: 'capture-row-end' }, widthInput, uploadBtn))
+  panel.appendChild(row)
+  panel.appendChild(
+    el(
+      'p',
+      { class: 'capture-hint' },
+      'Full-page capture, taken at the viewport width on the right. Most browsers: developer tools → device toolbar → set the width → “Capture full size screenshot”.',
+    ),
+  )
+  panel.appendChild(status)
+
+  if (image) {
+    panel.appendChild(
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'btn btn-sm capture-remove',
+          onclick: async () => {
+            status.textContent = 'Removing…'
+            status.className = 'capture-feedback'
+            try {
+              await api.deletePageImage(websiteId, path, image.viewport_w)
+              await onChanged()
+            } catch (err) {
+              status.textContent = (err && err.message) || 'Could not remove the capture.'
+              status.className = 'capture-feedback is-error'
+            }
+          },
+        },
+        'Remove capture',
+      ),
+    )
+  }
+
+  panel.appendChild(
+    el(
+      'p',
+      { class: 'capture-privacy' },
+      el('strong', null, 'This is the one image Athar stores, and you are choosing it. '),
+      'The tracker still captures no DOM, no text and no form values, and this server never fetches your site — a capture exists only because someone uploaded it. ' +
+        'It is stored in your own database and served only to signed-in users of this website, so capture the page as a logged-out visitor sees it: anything on screen, ' +
+        'including a real customer’s name, basket or order, becomes visible to every viewer of this dashboard.',
+    ),
+  )
+
+  slot.appendChild(panel)
+}
+
+/**
+ * Reports, in words an operator can act on, the two ways a capture can be the
+ * wrong picture. Returns null when nothing is wrong.
+ *
+ * The aspect-ratio test is the one that matters: an above-the-fold screenshot
+ * has roughly the viewport's own ratio, and stretching one to fill a frame the
+ * samples treat as the whole document would put every below-the-fold click in
+ * the wrong place while looking entirely plausible.
+ */
+function checkAlignment(image, meanViewportW, meanViewportH) {
+  if (!image.image_w || !image.image_h) return null
+
+  if (meanViewportW > 0 && meanViewportH > 0) {
+    const imageRatio = image.image_w / image.image_h
+    const viewportRatio = meanViewportW / meanViewportH
+    if (Math.abs(imageRatio - viewportRatio) / viewportRatio < 0.08) {
+      return (
+        'This capture has almost exactly the recorded viewport’s proportions, so it may be a single screen rather ' +
+        'than the full page. If it is, clicks below the fold are being drawn in the wrong place — recapture it full-page.'
+      )
+    }
+  }
+
+  const scale = image.image_w / image.viewport_w
+  const nearestWhole = Math.round(scale)
+  if (nearestWhole < 1 || Math.abs(scale - nearestWhole) > 0.02) {
+    return (
+      `This capture is ${image.image_w}px wide for a declared ${image.viewport_w}px viewport (${scale.toFixed(2)}×). ` +
+      'Alignment still holds — positions are proportions — but the declared width is probably not the one it was taken at.'
+    )
+  }
+  return null
+}
+
+/** Matches a bucket to an image, preferring the capture nearest its widths. */
+function imageForBucket(images, bucket) {
+  const inBucket = images.filter((img) => viewportBucketKey(img.viewport_w) === bucket.key)
+  if (inBucket.length === 0) return null
+  return inBucket.reduce((best, img) =>
+    Math.abs(img.viewport_w - bucket.label) < Math.abs(best.viewport_w - bucket.label) ? img : best,
+  )
+}
+
+function shortDate(ms) {
+  if (!ms) return 'recently'
+  try {
+    return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch {
+    return 'recently'
   }
 }
 
@@ -448,21 +773,48 @@ function renderState(root, kindOf, title, hint) {
 }
 
 /**
+ * The bucket a viewport width belongs to. Exported shape, in the sense that a
+ * stored page image is matched to recorded samples through this function and
+ * nothing else — so the two sides can never drift into disagreeing about which
+ * widths are "the same layout".
+ */
+export function viewportBucketKey(vw) {
+  return Math.round(vw / VIEWPORT_BUCKET_PX) * VIEWPORT_BUCKET_PX
+}
+
+/**
  * Groups samples by recorded viewport width into ~150px-wide buckets — wide
  * enough that jitter within one real device class collapses to one bucket,
  * narrow enough to keep 390 / 768 / 1024 / 1440-ish viewports distinct.
+ *
+ * Each bucket carries a `label`: the most common *actual* width in it, not the
+ * rounded key. A picker offering "~1950px" for a population of 1920px screens
+ * describes a width nobody has; the key is an implementation detail and stays
+ * one.
  */
 function bucketizeViewports(samples) {
   const withVw = samples.filter((s) => s.vw > 0)
   if (withVw.length === 0) return []
   const groups = new Map()
   for (const s of withVw) {
-    const key = Math.round(s.vw / 150) * 150
+    const key = viewportBucketKey(s.vw)
     if (!groups.has(key)) groups.set(key, [])
     groups.get(key).push(s)
   }
   return [...groups.entries()]
-    .map(([key, samplesForKey]) => ({ key, samples: samplesForKey }))
+    .map(([key, samplesForKey]) => {
+      const freq = new Map()
+      for (const s of samplesForKey) freq.set(s.vw, (freq.get(s.vw) || 0) + 1)
+      let label = key
+      let best = -1
+      for (const [vw, n] of freq) {
+        if (n > best) {
+          best = n
+          label = vw
+        }
+      }
+      return { key, label, samples: samplesForKey }
+    })
     .sort((a, b) => b.samples.length - a.samples.length)
 }
 

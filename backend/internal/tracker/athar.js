@@ -158,7 +158,10 @@
   // along, which is what lets a click map stay meaningful after a layout change.
   //
   // Nothing about the page content is captured: no DOM snapshot, no text, no
-  // form values, no keystrokes.
+  // form values, no keystrokes. That is still true now that the dashboard can
+  // draw a click map over a picture of the page — the picture is a screenshot
+  // an operator uploads to their own instance by hand, never anything this
+  // script produces or sends. See backend/internal/api/pageimages.go.
 
   var heat = [];
   var maxScroll = 0;

@@ -89,6 +89,14 @@ func (a *API) Register(mux *http.ServeMux) {
 	protected.HandleFunc("GET /api/websites/{id}/heatmap", a.handleHeatmap)
 	protected.HandleFunc("GET /api/websites/{id}/revenue", a.handleRevenue)
 
+	// Page images — the operator-supplied backdrop the click heatmap draws
+	// over. Reading one needs only view access; uploading or removing one is a
+	// write, because it changes what every other viewer of this website sees.
+	protected.HandleFunc("GET /api/websites/{id}/page-images", a.handleListPageImages)
+	protected.HandleFunc("GET /api/websites/{id}/page-image", a.handleGetPageImage)
+	protected.HandleFunc("PUT /api/websites/{id}/page-image", a.handlePutPageImage)
+	protected.HandleFunc("DELETE /api/websites/{id}/page-image", a.handleDeletePageImage)
+
 	// Instance administration.
 	admin := http.NewServeMux()
 	admin.HandleFunc("GET /api/users", a.handleListUsers)

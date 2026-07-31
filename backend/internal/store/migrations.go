@@ -193,4 +193,46 @@ CREATE INDEX IF NOT EXISTS idx_revenue_site_time ON revenue (website_id, created
 CREATE INDEX IF NOT EXISTS idx_revenue_visit ON revenue (visit_id);
 `,
 	},
+	{
+		Version: 2,
+		Name:    "page_images",
+		SQL: `
+-- ── Page images ─────────────────────────────────────────────────────────────
+
+-- One operator-supplied picture of one page at one viewport width, used as the
+-- backdrop the click heat field is drawn over.
+--
+-- Nothing writes to this table except an authenticated operator: the tracker
+-- captures no DOM, no text and no screenshot, and the server never fetches the
+-- tracked site. A row exists here only because a human uploaded it, which is
+-- what keeps "your visitors' data never leaves your server" true even though a
+-- heatmap now has a real page under it.
+--
+-- data_b64 is base64, not a binary column, and that is deliberate rather than
+-- lazy. SQLite spells binary BLOB and Postgres spells it BYTEA; there is no
+-- literal spelling both accept, so a binary column would force a new Dialect
+-- method — exactly the growth dialect.go's own doc comment warns against. Base64
+-- in TEXT costs 33% on disk and round-trips identically on both engines. Images
+-- are capped at maxPageImageBytes (see store.go), one per (site, path,
+-- viewport), replaced rather than accumulated, so the ceiling is bounded by the
+-- number of pages an operator chooses to capture.
+CREATE TABLE IF NOT EXISTS page_images (
+	id         TEXT   NOT NULL PRIMARY KEY,
+	website_id TEXT   NOT NULL REFERENCES websites(id) ON DELETE CASCADE,
+	url_path   TEXT   NOT NULL,
+	viewport_w INTEGER NOT NULL,
+	image_w    INTEGER NOT NULL,
+	image_h    INTEGER NOT NULL,
+	mime       TEXT   NOT NULL,
+	byte_len   INTEGER NOT NULL,
+	sha256     TEXT   NOT NULL,
+	data_b64   TEXT   NOT NULL,
+	created_at BIGINT NOT NULL
+);
+
+-- One image per page per viewport width: re-uploading replaces, so a site
+-- cannot silently accumulate every capture ever taken of its homepage.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_page_images_key ON page_images (website_id, url_path, viewport_w);
+`,
+	},
 }

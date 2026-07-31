@@ -36,3 +36,6 @@ blob-report/
 
 # GeoIP databases — large, licensed separately, never redistributed
 *.mmdb
+
+# Output of `npm run check:site` — rendered proof screenshots, never committed.
+.site-check/

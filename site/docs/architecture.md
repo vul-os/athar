@@ -2,7 +2,7 @@
 
 ## One binary
 
-Athar builds to a single static Go binary with the React dashboard embedded via `go:embed`. There is no separate frontend process, no message queue, no cache layer, and no second language runtime needed to run it — only to build it (Node, for the dashboard bundle and the tracker script; both outputs are committed/embedded so the binary itself needs nothing at runtime).
+Athar builds to a single static Go binary with a hand-written HTML/CSS/JS dashboard embedded via `go:embed` (`backend/internal/webui/static/`, plain ES modules, no framework, no bundler). There is no separate frontend process, no message queue, no cache layer, and no second language runtime needed to run it — nor even to build it: `go build ./...` alone (no Node) produces a fully working binary. Node is only needed for two optional pieces: rebuilding the tracker script from source (the built `athar.min.js` is committed, so this isn't required for a normal build) and staging the marketing site into a release binary via `npm run build`.
 
 ## Request paths
 
@@ -38,6 +38,8 @@ Everything above `store.Store` talks to a single Go interface, never to a driver
 
 Adding a third engine means writing a `Dialect` and a migration file, not a second `Store` implementation.
 
+**`page_images`** (migration 2) is a direct test of that promise: it stores the operator-uploaded page captures the heatmap view composites its click density field over (see [Heatmaps](./heatmaps.md#page-captures)), one row per (website, URL path, viewport width). The image bytes live base64-encoded in a `TEXT` column rather than a native binary one, because SQLite (`BLOB`) and Postgres (`BYTEA`) have no common literal spelling — a binary column would need its own `Dialect` method, which is exactly the kind of engine-specific growth the seam exists to avoid. Base64 costs 33% more on disk than binary would; it round-trips identically on both engines with zero dialect-specific code, the same trade the timestamp and primary-key rules above already make. One capture per (website, path, viewport) replaces rather than accumulates, and the table cascades on website deletion.
+
 ## Ingest path
 
 For one beacon: parse → look up the website (cached, including negative results, so a flood of bogus website ids doesn't become a flood of database queries) → drop it if the user agent looks like a bot → compute the visitor hash (see [Privacy](./privacy.md#visitor-identity-the-daily-salt)) → find or open a visit within the session window → resolve GeoIP from the IP, then discard the IP → write the event (and any heatmap samples / revenue row) → touch the visit's last-seen time and view count.
@@ -46,7 +48,7 @@ Everything privacy-relevant about Athar is decided in this one path: no cookie i
 
 ## Frontend
 
-A React dashboard (Vite build) covers first-run setup and login, the reporting overview, the click/scroll/attention heatmap views, and adding a website. It's a static bundle embedded in the binary and served at `/`; it talks only to the JSON API described in [API](./api.md) — there's no server-rendering step and no separate frontend deploy.
+A hand-written HTML/CSS/JS dashboard covers first-run setup and login, the reporting overview, the click/scroll/attention heatmap views, and adding a website. It's plain files (`backend/internal/webui/static/`) embedded straight into the binary via `go:embed` and served at `/` — no build step, no bundler, no compiled bundle that can drift out of sync with its source; the dev loop is `go run ./backend/cmd/athar` plus editing those files directly. It talks only to the JSON API described in [API](./api.md) — there's no server-rendering step and no separate frontend deploy.
 
 The API is deliberately wider than the dashboard: user administration, password change, share-link minting and website deletion are all implemented and enforced server-side but have no screen yet. See [Roadmap](./roadmap.md) — treat any endpoint in [API](./api.md) that isn't listed above as request-only for now.
 

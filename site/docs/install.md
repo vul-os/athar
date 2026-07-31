@@ -5,22 +5,31 @@ Athar has one supported install path today: build the static binary from source.
 ## Requirements
 
 - Go 1.25+
-- Node 22+ (only needed at build time, to build the tracker script and the dashboard bundle — the running binary needs neither Go toolchain nor Node)
+- Node 22+ — optional. It's only needed to rebuild the tracker script from source and to produce a release binary that also embeds the marketing mini-site. The dashboard itself has no build step (it's hand-written HTML/CSS/JS embedded via `go:embed`), and the running binary needs neither Go toolchain nor Node.
 
 ## Build
+
+The simplest build, no Node involved:
+
+```bash
+git clone https://github.com/vul-os/athar.git
+cd athar
+go build -o athar ./backend/cmd/athar
+```
+
+This alone produces a self-contained binary with the dashboard and the (already-committed) tracker script both embedded. For a release build that also rebuilds the tracker from source and embeds the marketing site, use `npm run build` instead:
 
 ```bash
 git clone https://github.com/vul-os/athar.git
 cd athar
 npm install
-npm run build:all
+npm run build
 ```
 
-`build:all` runs three steps in order:
+`npm run build` runs two steps in order:
 
-1. `build:tracker` — compiles and minifies `backend/internal/tracker/athar.js` into `athar.min.js`, which is committed alongside the source copy so `go build` alone (no Node) can still produce a working binary from a checkout that already has it.
-2. `vite build` — builds the React dashboard.
-3. a build script that embeds the dashboard output and produces the `athar` binary.
+1. `build:tracker` — compiles and minifies `backend/internal/tracker/athar.js` into `athar.min.js`, which is also committed alongside the source copy so `go build` alone (no Node) can still produce a working binary from a checkout that already has it.
+2. `build:binary` — stages `site/` into `backend/cmd/athar/site`, compiles with `go build -tags embed_site`, then removes the staged copy — so the resulting binary also serves this marketing site under the `embed_site` build tag. See [Architecture](./architecture.md) for what that build tag does; the dashboard itself is embedded unconditionally either way.
 
 The result is a single executable. Copy it wherever you like; it needs no accompanying files except an optional `athar.config.json` and, if you want geography, a `.mmdb` file.
 

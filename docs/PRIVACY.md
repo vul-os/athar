@@ -20,11 +20,35 @@ selector — never DOM content, never text, never form values, never
 keystrokes. Per revenue event: an amount in integer minor units, a
 currency, and an order id you supplied.
 
-**Not stored, anywhere, ever:** the raw client IP address; a device
-fingerprint beyond the coarse fields above; any cookie or client-generated
-identifier; page screenshots, DOM snapshots, or keystroke logs; exact
+**Not stored, anywhere, ever, by the tracker:** the raw client IP address; a
+device fingerprint beyond the coarse fields above; any cookie or
+client-generated identifier; DOM snapshots or keystroke logs; exact
 geographic coordinates (only country/region/city name strings, when GeoIP
-is configured at all).
+is configured at all). No visitor page content ever reaches Athar's server —
+the tracker records a click's position as a page-relative percentage plus a
+short CSS selector, never the page itself.
+
+## Page captures: the one thing an operator, not the tracker, can add
+
+The heatmap dashboard can draw the click density field over a real picture
+of the page instead of only a wireframe. That picture is never something
+the tracker captures from a visitor's browser — it is a screenshot an
+**operator** deliberately takes of their own page and uploads through the
+dashboard (`PUT /api/websites/{id}/page-image`), stored one per (website,
+URL path, viewport width) in the operator's own database (the `page_images`
+table). No tracker code changed to add this, no visitor-facing request is
+involved, and the boundary above still holds exactly as stated: the tracker
+itself captures no page content, ever.
+
+What changes is what the *operator's own database* can now contain: a
+capture is visible to every signed-in user of that website's dashboard, so
+whatever is on screen when it's taken — including a real visitor's name, a
+basket, an order — becomes visible to all of them too. Athar's guidance,
+stated in the dashboard at the moment of upload, is to capture the page as a
+logged-out visitor sees it. This is the operator's own choice about their
+own database, the same as any other content they might choose to store
+there; it is not something Athar's tracker or server does on its own, and
+it does not change what any visitor's browser sends.
 
 ## The visitor-identity construction
 

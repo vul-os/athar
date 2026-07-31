@@ -178,8 +178,13 @@ type heatPointView struct {
 // a click / scroll / attention overlay.
 //
 // Samples are returned as coordinates and selectors only — there is no page
-// content here, because none is ever captured. A heatmap in Athar shows where
+// content here, because none is ever collected. A heatmap in Athar shows where
 // people clicked, not what they saw or typed.
+//
+// The dashboard may composite these coordinates over a picture of the page, but
+// that picture does not come from here and does not come from a visitor: it is a
+// screenshot an operator uploaded, served separately by the page-image routes.
+// See backend/internal/api/pageimages.go for the whole argument.
 func (a *API) handleHeatmap(w http.ResponseWriter, r *http.Request) {
 	site, _ := a.requireWebsite(w, r, auth.AccessRead)
 	if site == nil {

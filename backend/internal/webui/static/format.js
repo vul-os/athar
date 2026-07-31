@@ -26,6 +26,25 @@ export function duration(seconds) {
 }
 
 /**
+ * Formats a byte count for a human reading a file size.
+ *
+ * Binary units (1 KB here means 1024 bytes), which is what a browser's own
+ * download UI and every file manager on a developer's machine report, so a
+ * capture that shows as "412 KB" in the dashboard matches what they saw when
+ * they took it. One decimal place from MB up: "1.4 MB" is useful, "1.437 MB"
+ * is noise, and "1434 KB" is arithmetic the reader should not have to do.
+ */
+export function bytes(n) {
+  if (n === null || n === undefined) return '—'
+  if (n < 1024) return `${Math.round(n)} B`
+  const kb = n / 1024
+  if (kb < 1024) return `${Math.round(kb)} KB`
+  const mb = kb / 1024
+  if (mb < 1024) return `${mb.toFixed(1)} MB`
+  return `${(mb / 1024).toFixed(1)} GB`
+}
+
+/**
  * Formats integer minor units in a currency.
  *
  * The exponent comes from Intl rather than a hardcoded /100: JPY has no minor

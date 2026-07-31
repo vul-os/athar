@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"path/filepath"
@@ -416,5 +417,66 @@ func TestNormalizeDSN(t *testing.T) {
 		if engine != c.engine || rest != c.rest {
 			t.Errorf("normalizeDSN(%q) = %q,%q want %q,%q", c.in, engine, rest, c.engine, c.rest)
 		}
+	}
+}
+
+// Page images are the largest rows Athar ever stores, and the only ones holding
+// something an operator recognises as their own content. Two properties matter
+// enough to pin down here rather than only through the API:
+//
+//   - base64-in-TEXT must round-trip byte for byte. The column is TEXT because
+//     SQLite's BLOB and Postgres's BYTEA have no common literal spelling (see
+//     the migration's own comment); an encoding that silently mangled a byte
+//     would produce a corrupt image nothing else would notice until it was on
+//     screen under a heat field.
+//   - deleting a website must take its captures with it. "Delete this site"
+//     removing every visit but leaving megabytes of screenshots of that site's
+//     pages behind would be the worst possible half-delete.
+func TestPageImageRoundTripsAndCascades(t *testing.T) {
+	ctx := context.Background()
+	s := newTestStore(t)
+	_, siteID := seedSite(t, s)
+
+	// Every byte value, so a bad encoding cannot hide in an unused range.
+	raw := make([]byte, 256)
+	for i := range raw {
+		raw[i] = byte(i)
+	}
+
+	img := &PageImage{
+		WebsiteID: siteID, URLPath: "/pricing", ViewportW: 1440,
+		ImageW: 1440, ImageH: 5210, MIME: "image/png", Bytes: raw,
+	}
+	if err := s.PutPageImage(ctx, img); err != nil {
+		t.Fatalf("PutPageImage: %v", err)
+	}
+	if img.SHA256 == "" {
+		t.Error("PutPageImage did not compute a content hash — the ETag would be empty")
+	}
+
+	got, err := s.GetPageImage(ctx, siteID, "/pricing", 1440)
+	if err != nil {
+		t.Fatalf("GetPageImage: %v", err)
+	}
+	if !bytes.Equal(got.Bytes, raw) {
+		t.Errorf("stored bytes did not round-trip: got %d bytes, want %d", len(got.Bytes), len(raw))
+	}
+	if got.ImageW != 1440 || got.ImageH != 5210 {
+		t.Errorf("dimensions = %d×%d, want 1440×5210 — the heat frame is sized from these", got.ImageW, got.ImageH)
+	}
+
+	metas, err := s.ListPageImages(ctx, siteID)
+	if err != nil {
+		t.Fatalf("ListPageImages: %v", err)
+	}
+	if len(metas) != 1 || metas[0].ByteLen != len(raw) {
+		t.Fatalf("listed %v, want one entry of %d bytes", metas, len(raw))
+	}
+
+	if err := s.DeleteWebsite(ctx, siteID); err != nil {
+		t.Fatalf("DeleteWebsite: %v", err)
+	}
+	if _, err := s.GetPageImage(ctx, siteID, "/pricing", 1440); !errors.Is(err, ErrNotFound) {
+		t.Errorf("the capture survived its website's deletion (err = %v)", err)
 	}
 }

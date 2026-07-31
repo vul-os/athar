@@ -1,255 +1,1171 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Athar — Analytics where the data never leaves your server.</title>
 <meta name="description" content="A self-hosted web analytics tool with heatmaps and ecommerce tooling. One static Go binary, cookieless by construction, MIT OR Apache-2.0 licensed.">
-  <link rel="canonical" href="https://vulos.org/projects/athar/">
-  <meta name="color-scheme" content="dark light">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Athar">
-  <meta property="og:title" content="Athar — Analytics where the data never leaves your server.">
-  <meta property="og:description" content="A self-hosted web analytics tool with heatmaps and ecommerce tooling. One static Go binary, cookieless by construction, MIT OR Apache-2.0 licensed.">
-  <meta property="og:url" content="https://vulos.org/projects/athar/">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Athar — Analytics where the data never leaves your server.">
-  <meta name="twitter:description" content="A self-hosted web analytics tool with heatmaps and ecommerce tooling. One static Go binary, cookieless by construction, MIT OR Apache-2.0 licensed.">
-  <meta property="og:image" content="https://vulos.org/projects/athar/assets/og-card.png">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Athar — A self-hosted web analytics tool with heatmaps and ecommerce tooling. One static Go binary, cookieless by construction, MIT OR Apache-2.0 licensed.">
-  <meta name="twitter:image" content="https://vulos.org/projects/athar/assets/og-card.png">
+<link rel="canonical" href="https://vulos.org/projects/athar/">
+<meta name="theme-color" content="#0B0B0D">
+<meta name="color-scheme" content="dark light">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Athar">
+<meta property="og:title" content="Athar — Analytics where the data never leaves your server.">
+<meta property="og:description" content="A self-hosted web analytics tool with heatmaps and ecommerce tooling. One static Go binary, cookieless by construction, MIT OR Apache-2.0 licensed.">
+<meta property="og:url" content="https://vulos.org/projects/athar/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Athar — Analytics where the data never leaves your server.">
+<meta name="twitter:description" content="A self-hosted web analytics tool with heatmaps and ecommerce tooling. One static Go binary, cookieless by construction, MIT OR Apache-2.0 licensed.">
+<meta property="og:image" content="https://vulos.org/projects/athar/assets/og-card.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Athar — A self-hosted web analytics tool with heatmaps and ecommerce tooling. One static Go binary, cookieless by construction, MIT OR Apache-2.0 licensed.">
+<meta name="twitter:image" content="https://vulos.org/projects/athar/assets/og-card.png">
 <link rel="icon" href="./assets/brand/favicon.svg" type="image/svg+xml">
-<style>*,*::before,*::after{box-sizing:border-box}
+
+<!-- Theme resolved before first paint: no flash, and shared with docs.html
+     via the same localStorage key. -->
+<script>
+(function(){try{var s=localStorage.getItem('athar-site-theme');
+document.documentElement.setAttribute('data-theme',s==='light'||s==='dark'?s:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
+}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();
+</script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   Athar landing — "the record".
+
+   ── THE STRUCTURAL IDEA ───────────────────────────────────────────────────
+   أثر (athar) is the trace: the mark left behind, and the fact that it
+   mattered. Athar's product argument is that the trace stays on the server
+   you own. Its headline feature — a heatmap — is literally a picture of
+   accumulated traces, measured against the page they were left on.
+
+   So this page is not a brochure with sections. It is a MEASUREMENT RECORD
+   with numbered PLATES and numbered FIGURES, and its one repeated structural
+   device is a RULER: every plate heading sits above a scale of ten ticks with
+   one tick struck in amber at that plate's own depth through the document.
+   That is the product's own scroll-depth vocabulary, applied to the document
+   you are reading, computed from the real layout at load — not decoration
+   with numbers painted on. Product captures are FIGURES with figure captions,
+   in browser chrome, stated at their real dimensions.
+
+   The page's texture is the graticule: the same 10%-by-8% measurement grid
+   the dashboard's own heat frame is drawn on (see .heat-frame in
+   backend/internal/webui/static/ui.css), fixed behind everything at very low
+   contrast. A measured surface, not a gradient.
+
+   None of that is borrowed from a sibling Vulos landing: this is the only one
+   built as an instrument record, and the deliberate absences are as
+   load-bearing as the presences — no glow, no halo, no radial gradient, no
+   bento grid, no glass. Separation is carried by hairlines and by the grid.
+
+   ── TYPE ──────────────────────────────────────────────────────────────────
+   Fraunces (self-hosted variable) is the display face and carries every plate
+   title at full size — a text face with ink-and-paper eccentricity, which is
+   the right voice for a page about a trace. Schibsted Grotesk (self-hosted
+   variable) carries body copy. IBM Plex Mono (self-hosted, two weights) is
+   every number, every label, every ruler stamp and all window chrome: the
+   register of an instrument panel, never of prose.
+
+   ── COLOUR ────────────────────────────────────────────────────────────────
+   One accent, from brand/logo.svg: AMBER #E9A23B on an ink ground. Everything
+   else is a warm near-black or near-white neutral.
+
+   MEASURED, not guessed (sRGB relative luminance, WCAG 2.1 ratios; re-measure
+   with scripts/contrast-check.mjs after touching any of these):
+     dark  --t1 #F5F3EF on #0B0B0D ......... 17.51:1
+     dark  --t2 #A6A3AC on #0B0B0D ..........  7.86:1
+     dark  --t3 #948F9B on #0B0B0D ..........  6.24:1   (raised from #86838C;
+                                                        5.72:1 on --panel and
+                                                        5.38:1 on --panel-2,
+                                                        where it is also used)
+     dark  --amber #E9A23B on #0B0B0D .......  9.08:1   safe as ink and as fill
+     light --t1 #16151A on #FBFAF8 ......... 16.60:1
+     light --t2 #5B5750 on #FBFAF8 ..........  7.11:1
+     light --t3 #6B665E on #FBFAF8 ..........  5.46:1   (5.70:1 on --panel,
+                                                        5.06:1 on --panel-2)
+     light --amber-ink #9A5710 on #FBFAF8 ...  5.42:1   amber itself is ~2.1:1
+                                                        here — a fine FILL, an
+                                                        unusable INK, hence the
+                                                        separate token.
+   Amber-coloured TEXT therefore always resolves through --amber-ink, which is
+   the brand amber in dark and the darkened one in light. Same accounting as
+   site/assets/style.css, which docs.html uses, so the two pages stay one lit
+   surface.
+
+   CODE — the fixed ten-colour token palette shared across four sibling Vulos
+   projects, independent of page theme (the code surface #0C1116 stays dark in
+   both). Duplicated verbatim from site/assets/style.css and rendered with the
+   same vendored site/assets/vendor/highlight.min.js the docs use.
+
+   ── REAL CAPTURES ─────────────────────────────────────────────────────────
+   Every figure is a genuine screenshot of the shipped dashboard, regenerated
+   by `node scripts/site-screenshots.mjs` against a seeded demo instance — a
+   script that refuses to write a heatmap capture at all unless it has first
+   proved, from the rendered geometry and the heat canvas's own pixels, that
+   the overlay lands on the elements the clicks were recorded from.
+
+   Each figure is two <img>s, one per theme, with the inactive one hidden by
+   CSS keyed off data-theme. NEVER loading="lazy" on either: a display:none
+   element has no layout box, so native lazy-loading's viewport check can
+   never fire and the hidden file would never be fetched — the image would
+   simply be blank on theme switch. width/height attributes state the real
+   pixel dimensions so the box is reserved before the file arrives.
+
+   ── MOTION ────────────────────────────────────────────────────────────────
+   Explains, never decorates: plates fade up once, on first approach, and the
+   §01 ring illustration pulses to stand in for a trace still spreading.
+   prefers-reduced-motion disables both; content simply appears.
+
+   Self-contained: no CDN, no remote font, no remote image, no analytics, no
+   network call of any kind. This page does not measure its readers — see the
+   closing plate, which shows exactly what it could have and did not.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@font-face{font-family:'Fraunces Variable';font-style:normal;font-weight:100 900;font-display:swap;src:url('./assets/fonts/fraunces-latin-wght-normal.woff2') format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Fraunces Variable';font-style:italic;font-weight:100 900;font-display:swap;src:url('./assets/fonts/fraunces-latin-wght-italic.woff2') format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Schibsted Grotesk Variable';font-style:normal;font-weight:400 900;font-display:swap;src:url('./assets/fonts/schibsted-grotesk-latin-wght-normal.woff2') format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url('./assets/fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-weight:600;font-display:swap;src:url('./assets/fonts/ibm-plex-mono-latin-600-normal.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+
+*,*::before,*::after{box-sizing:border-box}
+
 :root{
-  --bg:#09090B; --bg-soft:#0E0E10; --panel:#131316; --panel-2:#18181B;
-  --border:rgba(255,255,255,.08); --border-2:rgba(255,255,255,.13);
-  --text:#FAFAFA; --muted:#A1A1AA; --faint:#71717A;
-  --radius:16px; --max:1120px;
-  --mono:ui-monospace,SFMono-Regular,"SF Mono","Geist Mono",Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  --bg:#0B0B0D; --bg-2:#111114; --panel:#16161A; --panel-2:#1C1C21; --sunken:#08080A;
+  --line:rgba(255,255,255,.10); --line-2:rgba(255,255,255,.17); --hair:rgba(255,255,255,.06);
+  --t1:#F5F3EF; --t2:#A6A3AC; --t3:#948F9B;
+
+  --amber:#E9A23B; --amber-ink:#E9A23B; --amber-deep:#C77B2E;
+  --amber-wash:rgba(233,162,59,.11); --amber-edge:rgba(233,162,59,.34);
+
+  --ok:#34D399; --ok-wash:rgba(52,211,153,.10); --ok-edge:rgba(52,211,153,.30);
+  --now:#E9A23B; --now-wash:rgba(233,162,59,.10); --now-edge:rgba(233,162,59,.30);
+  --pend:#93C5FD; --pend-wash:rgba(147,197,253,.10); --pend-edge:rgba(147,197,253,.28);
+
+  /* The graticule: the dashboard's own heat-frame grid, at page scale. */
+  --grid:rgba(255,255,255,.030); --grid-size:112px;
+
+  --r:12px; --r-sm:8px; --r-lg:16px; --max:1200px;
+  --quick:130ms; --base:220ms; --slow:420ms; --ease:cubic-bezier(.2,0,.2,1); --decel:cubic-bezier(.05,.7,.1,1);
+  --display:'Fraunces Variable',ui-serif,Georgia,'Times New Roman',serif;
+  --sans:'Schibsted Grotesk Variable',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  color-scheme:dark;
 }
-html{scroll-behavior:smooth}
-body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;font-size:16px}
-body::before{content:"";position:fixed;inset:0;z-index:-1;background:
-  radial-gradient(1100px 600px at 80% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent 60%),
-  radial-gradient(900px 500px at -10% 10%, color-mix(in srgb,var(--accent-2) 8%, transparent), transparent 55%),
-  var(--bg);}
+:root[data-theme=light]{
+  --bg:#FBFAF8; --bg-2:#F4F1EC; --panel:#FFFFFF; --panel-2:#F4F1EC; --sunken:#EFEBE3;
+  --line:#E4DFD5; --line-2:#D2CABA; --hair:rgba(20,18,14,.06);
+  --t1:#16151A; --t2:#5B5750; --t3:#6B665E;
+
+  --amber-ink:#9A5710;
+  --amber-wash:#FBF1E3; --amber-edge:rgba(154,87,16,.30);
+
+  --ok:#0C7049; --ok-wash:rgba(15,143,95,.08); --ok-edge:rgba(15,143,95,.26);
+  --now:#9A5710; --now-wash:#FBF1E3; --now-edge:rgba(154,87,16,.28);
+  --pend:#1D4ED8; --pend-wash:rgba(29,78,216,.06); --pend-edge:rgba(29,78,216,.22);
+
+  --grid:rgba(20,18,14,.038);
+  color-scheme:light;
+}
+
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{
+  margin:0;background:var(--bg);color:var(--t1);font-family:var(--sans);
+  font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+/* The graticule. Fixed rather than scrolling: it is the surface the page is
+   drawn on, not a pattern printed on the page. */
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(to right, var(--grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size:var(--grid-size) var(--grid-size);
+}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
-.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
-.accent{color:var(--accent)}
+svg{display:block}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+h1,h2,h3,h4{margin:0;font-family:var(--display);letter-spacing:-.02em;font-weight:650;line-height:1.06}
+p{margin:0}
+code,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums lining-nums}
+::selection{background:var(--amber-wash);color:var(--t1)}
+:where(a,button,summary,[tabindex]):focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
 
-/* Header */
-.site-header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:color-mix(in srgb,var(--bg) 72%, transparent);border-bottom:1px solid var(--border)}
-.nav{display:flex;align-items:center;gap:18px;height:64px}
-.brand{display:flex;align-items:center;gap:11px;font-weight:600;font-size:18px;letter-spacing:-.03em}
-.brand .tile{width:34px;height:34px;border-radius:9px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 4px 14px rgba(0,0,0,.35);background:#0E0E10;display:grid;place-items:center}
-.brand .tile svg{width:100%;height:100%;display:block}
-.nav-spacer{flex:1}
-.nav-links{display:flex;align-items:center;gap:22px}
-.nav-links a{color:var(--muted);font-size:14.5px;font-weight:500;transition:color .15s}
-.nav-links a:hover{color:var(--text)}
-.vulos-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--border-2);border-radius:999px;font-size:13px;color:var(--muted);transition:border-color .15s,color .15s}
-.vulos-badge:hover{border-color:var(--accent);color:var(--text)}
-.vulos-badge img{width:16px;height:16px;border-radius:4px}
-@media(max-width:760px){.nav-links{display:none}}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 28px;position:relative;z-index:1}
+@media(max-width:560px){.wrap{padding:0 18px}}
 
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:9px;padding:12px 20px;border-radius:11px;font-weight:600;font-size:15px;border:1px solid transparent;cursor:pointer;transition:transform .12s,box-shadow .2s,background .2s,border-color .2s}
-.btn:hover{transform:translateY(-1px)}
-.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;box-shadow:0 8px 26px -8px color-mix(in srgb,var(--accent) 60%, transparent)}
-.btn-primary:hover{box-shadow:0 12px 34px -8px color-mix(in srgb,var(--accent) 75%, transparent)}
-.btn-ghost{background:var(--panel);border-color:var(--border-2);color:var(--text)}
-.btn-ghost:hover{border-color:var(--accent)}
+.skip{
+  position:absolute;left:14px;top:-70px;z-index:200;padding:11px 18px;border-radius:8px;
+  background:var(--amber);color:#1A1204;font-weight:750;font-size:14px;
+  transition:top var(--quick) var(--ease);
+}
+.skip:focus{top:14px}
 
-/* Hero */
-.hero{padding:84px 0 56px}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--accent);background:color-mix(in srgb,var(--accent) 10%, transparent);border:1px solid color-mix(in srgb,var(--accent) 28%, transparent);padding:6px 13px;border-radius:999px}
-.hero .wordmark{margin:26px 0 0;font-size:clamp(48px,8vw,76px);font-weight:800;letter-spacing:-.04em;line-height:1}
-.hero .tagline{font-size:clamp(18px,2.4vw,23px);color:var(--text);margin:18px 0 0;max-width:720px;font-weight:500}
-.hero .blurb{font-size:16.5px;color:var(--muted);margin:18px 0 0;max-width:660px}
-.cta-row{display:flex;flex-wrap:wrap;gap:13px;margin-top:30px}
-.hero-visual{margin-top:54px;border-radius:var(--radius);border:1px solid var(--border-2);overflow:hidden;box-shadow:0 40px 80px -30px rgba(0,0,0,.7);background:var(--panel)}
-.hero-visual img{width:100%;display:block}
+/* ── Reveal on scroll ─────────────────────────────────────────────────────
+   Scoped to .js so scripting-off never leaves content invisible. */
+.js .rv{opacity:0;transform:translateY(14px);transition:opacity var(--slow) var(--decel),transform var(--slow) var(--decel)}
+.js .rv.in{opacity:1;transform:none}
 
-/* Sections */
-.section{padding:64px 0}
-.section h2{font-size:clamp(26px,4vw,36px);letter-spacing:-.03em;margin:0 0 8px;font-weight:800}
-.section .lead{color:var(--muted);margin:0 0 38px;font-size:17px;max-width:640px}
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.site-header{
+  position:sticky;top:0;z-index:60;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.nav{display:flex;align-items:center;gap:16px;height:66px;position:relative;z-index:1}
+.brand{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;letter-spacing:-.02em;font-size:19px;flex:none;color:var(--t1)}
+.brand .tile{width:30px;height:30px;border-radius:8px;display:block;flex:none;overflow:hidden}
+.brand .tile img{width:100%;height:100%;display:block}
+.brand .ar{font-family:var(--sans);font-weight:500;font-size:15px;color:var(--t3);letter-spacing:0;padding-left:11px;border-left:1px solid var(--line-2);line-height:1.3}
+.nav-links{display:flex;align-items:center;gap:2px;margin-left:14px}
+.nav-links a{padding:7px 10px;border-radius:6px;color:var(--t2);font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;transition:color var(--quick) var(--ease),background var(--quick) var(--ease)}
+.nav-links a:hover{color:var(--t1);background:var(--panel-2)}
+.nav-links a.active{color:var(--amber-ink);background:var(--amber-wash)}
+.nav-act{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+.iconbtn{width:44px;height:44px;border-radius:9px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center;color:var(--t2);flex:none;transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease)}
+.iconbtn:hover{color:var(--t1);border-color:var(--line-2)}
+.iconbtn svg{width:17px;height:17px}
+.iconbtn.vulos-btn img{width:18px;height:18px;border-radius:4px;display:block}
+:root[data-theme=light] .moon{display:none}
+:root[data-theme=dark] .sun{display:none}
+.ghlink{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 13px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font-size:14px;font-weight:600;color:var(--t2);transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease)}
+.ghlink:hover{color:var(--t1);border-color:var(--line-2)}
+.ghlink svg{width:16px;height:16px}
+@media(max-width:1080px){.nav-links{display:none}}
+@media(max-width:620px){.ghlink span{display:none}.ghlink{padding:0 11px}.brand .ar{display:none}}
 
-/* Features */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}}
-@media(max-width:620px){.grid{grid-template-columns:1fr}}
-.card{background:linear-gradient(180deg,var(--panel),var(--bg-soft));border:1px solid var(--border);border-radius:var(--radius);padding:24px;transition:border-color .2s,transform .2s}
-.card:hover{border-color:color-mix(in srgb,var(--accent) 45%, var(--border));transform:translateY(-2px)}
-.card .dot{width:34px;height:34px;border-radius:9px;background:color-mix(in srgb,var(--accent) 13%, transparent);border:1px solid color-mix(in srgb,var(--accent) 32%, transparent);display:grid;place-items:center;margin-bottom:15px}
-.card .dot::after{content:"";width:11px;height:11px;border-radius:3px;background:var(--accent)}
-.card h3{margin:0 0 8px;font-size:17.5px;letter-spacing:-.01em}
-.card p{margin:0;color:var(--muted);font-size:14.5px}
-.card code{font-family:var(--mono);font-size:.86em;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:5px;color:var(--text)}
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:9px;font-weight:700;font-size:15px;border:1px solid transparent;transition:transform var(--quick) var(--ease),border-color var(--quick) var(--ease),background var(--quick) var(--ease),color var(--quick) var(--ease);min-height:44px}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--amber);color:#1A1204;border-color:var(--amber)}
+.btn-primary:hover{background:var(--amber-deep);border-color:var(--amber-deep);color:#140E02}
+:root[data-theme=light] .btn-primary:hover{background:#8A4E0D;border-color:#8A4E0D;color:#FFFFFF}
+.btn-ghost{background:var(--panel);border-color:var(--line-2);color:var(--t1)}
+.btn-ghost:hover{border-color:var(--amber-edge)}
+.cta{display:flex;flex-wrap:wrap;gap:11px}
 
-/* Quickstart */
-.quick{display:grid;grid-template-columns:1.1fr 1fr;gap:34px;align-items:center}
-@media(max-width:820px){.quick{grid-template-columns:1fr}}
-.codeblock{background:#0C0C0E;border:1px solid var(--border-2);border-radius:var(--radius);overflow:hidden}
-.codeblock .bar{display:flex;align-items:center;gap:7px;padding:12px 16px;border-bottom:1px solid var(--border)}
-.codeblock .bar i{width:11px;height:11px;border-radius:50%;background:#26262b;display:inline-block}
-.codeblock pre{margin:0;padding:18px 20px;overflow:auto;font-family:var(--mono);font-size:13.5px;line-height:1.75;color:#D4D4D8}
-.codeblock .c{color:var(--faint)}
-.steps{list-style:none;margin:0;padding:0;display:grid;gap:16px}
-.steps li{display:flex;gap:14px;align-items:flex-start}
-.steps .num{flex:none;width:28px;height:28px;border-radius:8px;background:color-mix(in srgb,var(--accent) 13%, transparent);border:1px solid color-mix(in srgb,var(--accent) 32%, transparent);color:var(--accent);font-weight:700;display:grid;place-items:center;font-size:14px}
-.steps b{display:block;font-size:15.5px}
-.steps span{color:var(--muted);font-size:14px}
+/* ═══ THE PLATE — the page's one structural unit ═══════════════════════════
+   A numbered leaf of a measurement record. Its heading sits over a ruler:
+   ten ticks across the full column, one struck amber at the plate's own depth
+   through the document, with the reading stamped in mono at the right. The
+   depths are computed from the real rendered layout on load (see the script
+   at the bottom) and written into the DOM — a page about honest measurement
+   does not get to print made-up numbers on its own scale. ─────────────── */
+.plate{padding:88px 0 0;position:relative;z-index:1}
+.plate:last-of-type{padding-bottom:24px}
+@media(max-width:760px){.plate{padding-top:60px}}
 
-/* Decent band (reused for privacy architecture) */
-.decent{background:linear-gradient(120deg,var(--panel),var(--bg-soft));border:1px solid var(--border);border-radius:var(--radius);padding:40px}
-.decent h2{margin-top:0}
-.decent .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:28px}
-@media(max-width:820px){.decent .cols{grid-template-columns:1fr}}
-.decent h4{margin:0 0 6px;font-size:16px;letter-spacing:-.01em}
-.decent h4::before{content:"/ ";color:var(--accent);font-weight:700}
-.decent p{margin:0;color:var(--muted);font-size:14.5px}
+.register{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.register .no{
+  font-family:var(--mono);font-weight:600;font-size:12px;letter-spacing:.14em;
+  color:var(--amber-ink);background:var(--amber-wash);border:1px solid var(--amber-edge);
+  padding:3px 9px;border-radius:5px;flex:none;
+}
+.register .label{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3)}
+.register .depth{margin-left:auto;font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--t3);flex:none}
+.register .depth b{color:var(--t2);font-weight:600}
 
-/* Vulos band */
-.vulos-band{margin:24px 0;background:linear-gradient(120deg,var(--panel),var(--bg-soft));border:1px solid var(--border);border-radius:var(--radius);padding:40px;display:flex;gap:26px;align-items:center}
-@media(max-width:680px){.vulos-band{flex-direction:column;text-align:center}}
-.vulos-band img{width:60px;height:60px;border-radius:14px;flex:none}
-.vulos-band h3{margin:0 0 6px;font-size:21px}
-.vulos-band p{margin:0;color:var(--muted);max-width:680px}
-.vulos-band .more{margin-top:14px;display:inline-flex;color:var(--accent);font-weight:600;font-size:15px}
+.ruler{position:relative;height:15px;margin-top:12px;border-top:1px solid var(--line-2)}
+.ruler i{
+  position:absolute;top:0;width:1px;height:6px;background:var(--line-2);
+}
+.ruler i:nth-child(5n+1){height:11px}
+.ruler .mark{
+  position:absolute;top:-1px;width:2px;height:15px;background:var(--amber);
+  transition:left var(--slow) var(--decel);
+}
+@media(prefers-reduced-motion:reduce){.ruler .mark{transition:none}}
 
-/* Footer */
-.site-footer{border-top:1px solid var(--border);margin-top:40px;padding:40px 0}
-.foot{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
-.foot .left{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
-.foot .left img{width:20px;height:20px;border-radius:5px}
-.foot .links{display:flex;gap:20px;flex-wrap:wrap}
-.foot .links a{color:var(--muted);font-size:14px}
-.foot .links a:hover{color:var(--text)}
+.plate h2{font-family:var(--display);font-weight:600;font-size:clamp(31px,4.6vw,52px);margin:26px 0 0;max-width:22ch;letter-spacing:-.025em;line-height:1.03;text-wrap:balance}
+.plate h2 em{font-style:italic;font-weight:560;color:var(--amber-ink)}
+.lead{color:var(--t2);font-size:clamp(16px,1.35vw,18px);margin:20px 0 0;max-width:64ch}
+.lead b{color:var(--t1);font-weight:650}
+.lead a{color:var(--amber-ink);font-weight:650;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.lead + .lead{margin-top:14px}
+h3.sub{font-family:var(--display);font-size:20px;font-weight:650;letter-spacing:-.015em}
 
-/* Salt diagram */
-.salt{display:grid;gap:10px;margin-top:22px;font-family:var(--mono);font-size:13.5px;background:#0C0C0E;border:1px solid var(--border-2);border-radius:12px;padding:18px 20px;overflow:auto;color:#D4D4D8}
-.salt .step{color:var(--faint)}
-.salt .k{color:var(--accent)}
+/* ── Hero ────────────────────────────────────────────────────────────────── */
+.hero{padding:clamp(44px,5.6vw,76px) 0 0;overflow:hidden;position:relative;z-index:1}
+/* The mark, oversized and mostly off-canvas: a target ring bleeding past the
+   page edge. Deliberately allowed past the right margin; body overflow-x is
+   hidden and nothing else is permitted to do this. */
+.hero-rings{position:absolute;right:-180px;top:-140px;width:600px;height:600px;z-index:0;pointer-events:none;opacity:.42}
+:root[data-theme=light] .hero-rings{opacity:.30}
+@media(max-width:1080px){.hero-rings{display:none}}
+.hero-eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);display:flex;align-items:center;gap:11px}
+.hero-eyebrow .ringmark{width:15px;height:15px;flex:none}
+.ringmark circle:first-child{fill:var(--amber)}
+.ringmark circle:not(:first-child){fill:none;stroke:var(--amber)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(43px,7.4vw,88px);letter-spacing:-.032em;margin:20px 0 0;line-height:.98;max-width:15ch;text-wrap:balance}
+h1 em{font-style:italic;font-weight:560;color:var(--amber-ink)}
+.hero-sub{color:var(--t2);font-size:clamp(16.5px,1.5vw,19px);margin:24px 0 0;max-width:58ch}
+.hero-sub b{color:var(--t1);font-weight:650}
+.hero .cta{margin-top:30px}
+
+/* The colophon strip: the hero's own instrument reading, ruled top and bottom
+   with each cell ruled off from the next. Numerals in amber, labels in mono. */
+.strip{display:flex;flex-wrap:wrap;margin-top:44px;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
+.strip i{
+  font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+  color:var(--t3);padding:15px 24px 15px 0;margin-right:24px;border-right:1px solid var(--line);
+  display:flex;align-items:baseline;gap:8px;
+}
+.strip i:last-child{border-right:0;margin-right:0;padding-right:0}
+.strip i b{color:var(--amber-ink);font-weight:600;font-size:15px}
+@media(max-width:720px){
+  .strip i{width:100%;border-right:0;border-bottom:1px solid var(--line);margin-right:0;padding:12px 0}
+  .strip i:last-child{border-bottom:0}
+}
+
+/* ── Figures: real product captures in browser chrome ────────────────────── */
+.fig{margin-top:38px;position:relative;z-index:1}
+.frame{position:relative;border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;background:var(--panel);min-width:0}
+.frame .chrome{display:flex;align-items:center;gap:8px;padding:0 14px;height:36px;background:var(--panel-2);border-bottom:1px solid var(--line)}
+.frame .chrome i{width:9px;height:9px;border-radius:99px;background:var(--line-2);display:block;flex:none}
+.frame .chrome i:first-child{background:color-mix(in srgb,var(--amber) 55%,var(--line-2))}
+.frame .chrome .addr{flex:1;min-width:0;font-family:var(--mono);font-size:11px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:6px}
+/* Both theme variants are eager-loaded — never loading="lazy". The inactive
+   one starts display:none, a display:none element never gets a layout box, so
+   the browser's lazy-load viewport check can never fire and the file would
+   never be requested at all. See the header comment. */
+.frame .shot{display:block;width:100%;height:auto}
+:root[data-theme=dark] .frame .shot-light{display:none}
+:root[data-theme=light] .frame .shot-dark{display:none}
+.figcap{display:flex;gap:14px;margin-top:13px;font-size:13.5px;line-height:1.55;color:var(--t3);max-width:88ch}
+.figcap .n{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--amber-ink);flex:none;padding-top:1px}
+.figcap b{color:var(--t2);font-weight:650}
+.figpair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:26px;margin-top:38px;align-items:start}
+@media(max-width:900px){.figpair{grid-template-columns:minmax(0,1fr)}}
+
+/* ── Two-column explainer ────────────────────────────────────────────────── */
+.explain{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.78fr);gap:clamp(28px,4vw,54px);align-items:center;margin-top:34px}
+@media(max-width:900px){.explain{grid-template-columns:minmax(0,1fr)}}
+.plateimg{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:22px;display:flex;align-items:center;justify-content:center}
+.plateimg svg{width:100%;height:auto;max-width:320px}
+.pulse-rings circle{transform-box:fill-box;transform-origin:50% 50%}
+.js .pulse-rings circle{animation:pulse 3.4s var(--ease) infinite}
+.pulse-rings circle:nth-child(2){animation-delay:.28s}
+.pulse-rings circle:nth-child(3){animation-delay:.56s}
+@keyframes pulse{0%,100%{opacity:.14}50%{opacity:.5}}
+
+/* ── Ruled row list — the page's list primitive, rules not boxes ─────────── */
+.rows{margin-top:32px;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:210px minmax(0,1fr);gap:26px;padding:20px 0;border-bottom:1px solid var(--line)}
+.row dt,.row .k{font-family:var(--mono);font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3);padding-top:3px}
+.row dd,.row .v{margin:0;color:var(--t2);font-size:15px}
+.row .v b{color:var(--t1);font-weight:650}
+.row .v code{font-family:var(--mono);font-size:.86em;background:var(--sunken);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--t1)}
+@media(max-width:680px){.row{grid-template-columns:minmax(0,1fr);gap:7px}}
+
+/* ── Three-column notes ──────────────────────────────────────────────────── */
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;margin-top:34px;padding-top:30px;border-top:1px solid var(--line)}
+@media(max-width:820px){.cols3{grid-template-columns:minmax(0,1fr);gap:26px}}
+.cols3 h4{font-family:var(--display);font-size:18.5px;font-weight:650;letter-spacing:-.015em}
+.cols3 h4::before{content:"/ ";color:var(--amber-ink)}
+.cols3 p{margin-top:9px;color:var(--t2);font-size:14.6px}
+
+/* ── Checklists ──────────────────────────────────────────────────────────── */
+.checklist{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:9px}
+.checklist li{display:flex;gap:10px;align-items:flex-start;font-size:14.8px;color:var(--t2)}
+.checklist svg{width:16px;height:16px;flex:none;margin-top:3px;color:var(--ok)}
+.checklist.no svg{color:var(--t3)}
+.checklist b{color:var(--t1)}
+
+/* ── Callout ─────────────────────────────────────────────────────────────── */
+.callout{margin-top:26px;border-left:3px solid var(--amber);background:var(--amber-wash);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:17px 20px;color:var(--t2);font-size:14.8px;max-width:80ch}
+.callout b{color:var(--t1)}
+.callout a{color:var(--amber-ink);font-weight:650;text-decoration:underline;text-underline-offset:3px}
+.callout.pend{border-left-color:var(--pend);background:var(--pend-wash)}
+.callout.pend a{color:var(--pend)}
+
+/* ── Terminal / code panel ──────────────────────────────────────────────── */
+.codewrap{background:#0C1116;border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden;min-width:0}
+.codebar{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)}
+.codebar i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.14);display:block;flex:none}
+.codebar .path{margin-left:6px;font-family:var(--mono);font-size:11.5px;color:#8195AC}
+.codewrap pre{margin:0;padding:19px 20px;overflow-x:auto}
+.codewrap code{font-family:var(--mono);font-size:13.2px;line-height:1.8;color:#C8D4E3;white-space:pre}
+.split{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:clamp(26px,3.6vw,44px);align-items:start;margin-top:34px}
+@media(max-width:960px){.split{grid-template-columns:minmax(0,1fr)}}
+.steps{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:15px;padding:20px 0;border-bottom:1px solid var(--line)}
+.steps .num{font-family:var(--mono);font-weight:600;font-size:12px;color:var(--amber-ink);padding-top:3px}
+.steps b{display:block;font-family:var(--sans);font-weight:700;font-size:15.5px}
+.steps span{color:var(--t2);font-size:14.4px}
+.steps code,.lead code{font-family:var(--mono);font-size:.86em;background:var(--sunken);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--t1)}
+
+/* ── Store-seam diagram ──────────────────────────────────────────────────── */
+.seam{margin-top:36px;border:1px solid var(--line);border-radius:var(--r);padding:28px 24px;position:relative;background:var(--panel)}
+.seam-tag{position:absolute;top:-9px;left:22px;padding:1px 11px;border-radius:99px;background:var(--bg);border:1px solid var(--line-2);font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3)}
+.seam-flow{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);align-items:center}
+@media(max-width:760px){.seam-flow{grid-template-columns:minmax(0,1fr)}}
+.seam-core{border-radius:var(--r-sm);padding:20px;text-align:center;background:var(--bg);border:1px solid var(--amber-edge)}
+.seam-core .badge{display:inline-block;margin-bottom:8px;padding:2px 9px;border-radius:99px;font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--amber-ink);background:var(--amber-wash);border:1px solid var(--amber-edge)}
+.seam-core b{display:block;font-family:var(--display);font-size:19px;font-weight:650}
+.seam-core span{display:block;color:var(--t3);font-size:12.5px;margin-top:5px;font-family:var(--mono)}
+.seam-join{display:grid;place-items:center;color:var(--amber-ink);position:relative;height:100%;min-height:36px}
+.seam-join i{position:absolute;top:12%;bottom:12%;left:50%;width:1px;background:var(--amber-edge)}
+.seam-join svg{position:relative;width:17px;height:17px;padding:2px;background:var(--panel)}
+@media(max-width:760px){.seam-join{height:32px}.seam-join svg{transform:rotate(90deg)}}
+.seam-ends{display:grid;gap:10px}
+.seam-node{border:1px solid var(--line);border-radius:var(--r-sm);background:var(--bg);padding:12px 14px;display:flex;gap:10px;align-items:flex-start;min-width:0}
+.seam-node .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex:none;margin-top:6px}
+.seam-node b{display:block;font-family:var(--sans);font-weight:700;font-size:14.2px}
+.seam-node span{display:block;color:var(--t3);font-size:12.2px;font-family:var(--mono);margin-top:2px}
+
+/* ── The register: shipped / in main / not built ─────────────────────────── */
+.statusquote{margin-top:22px;border-left:3px solid var(--amber);background:var(--amber-wash);border-radius:0 var(--r-sm) var(--r-sm) 0;padding:16px 20px;color:var(--t2);font-size:15px;max-width:80ch}
+.statusquote b{color:var(--t1)}
+.ledger{margin-top:34px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media(max-width:980px){.ledger{grid-template-columns:minmax(0,1fr)}}
+.lcol{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);overflow:hidden;min-width:0}
+.lcol .lhead{padding:13px 17px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.lcol .lhead .sw{width:8px;height:8px;border-radius:50%;flex:none}
+.lcol.shipped .lhead .sw{background:var(--ok)}
+.lcol.inmain .lhead .sw{background:var(--now)}
+.lcol.planned .lhead .sw{background:var(--pend)}
+.lcol .lhead b{font-family:var(--mono);font-weight:600;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase}
+.lrow{padding:12px 17px;border-bottom:1px solid var(--line);font-size:13.8px;color:var(--t2)}
+.lrow:last-child{border-bottom:0}
+.lrow b{color:var(--t1);font-weight:650}
+
+/* ── Comparison table ────────────────────────────────────────────────────── */
+.cmpwrap{overflow-x:auto;margin-top:32px;border:1px solid var(--line);border-radius:var(--r)}
+table.cmp{border-collapse:collapse;width:100%;min-width:700px;font-size:14px}
+table.cmp th,table.cmp td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.cmp thead th{background:var(--panel-2);font-family:var(--mono);font-weight:600;color:var(--t2);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
+table.cmp tbody td{color:var(--t2)}
+table.cmp tbody tr:last-child td{border-bottom:0}
+table.cmp tr.us td{color:var(--t1);font-weight:650;background:var(--amber-wash)}
+table.cmp tr.us td:first-child{color:var(--amber-ink);font-weight:800;font-family:var(--display)}
+.yes{color:var(--ok);font-weight:700}
+.no{color:var(--t3)}
+.partial{color:var(--pend)}
+
+/* ── Closing plate: the readings this page did not take ──────────────────── */
+.trace{margin-top:34px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--panel);overflow:hidden}
+.trace-head{padding:13px 20px;border-bottom:1px solid var(--line);background:var(--panel-2);font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--t3)}
+.trace-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:680px){.trace-grid{grid-template-columns:minmax(0,1fr)}}
+.trace-cell{padding:24px 20px;border-right:1px solid var(--line)}
+.trace-cell:last-child{border-right:0}
+@media(max-width:680px){.trace-cell{border-right:0;border-bottom:1px solid var(--line)}.trace-cell:last-child{border-bottom:0}}
+.trace-cell .k{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--t3)}
+.trace-cell .n{font-family:var(--mono);font-size:34px;font-weight:600;letter-spacing:-.02em;color:var(--amber-ink);margin-top:9px;line-height:1}
+.trace-cell .d{color:var(--t2);font-size:13.4px;margin-top:9px}
+.trace-foot{padding:17px 20px;border-top:1px solid var(--line);color:var(--t2);font-size:14.2px}
+.trace-foot b{color:var(--t1)}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.site-footer{border-top:1px solid var(--line);margin-top:80px;position:relative;z-index:1}
+.foot{padding:32px 0 46px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+.foot .left{display:flex;align-items:center;gap:11px;color:var(--t3);font-size:14px}
+.foot .left img{width:22px;height:22px;border-radius:5px}
+.foot .left a{color:var(--t1)}
+.foot .links{display:flex;gap:4px 14px;flex-wrap:wrap;font-size:14px;color:var(--t2)}
+/* Tap targets grown to 44px tall without moving anything horizontally: the
+   vertical padding is cancelled by a matching negative *vertical* margin, and
+   the horizontal padding is left to widen the target. A negative horizontal
+   margin here is what pushed the first and last link past the page edge — a
+   real overflow that body{overflow-x:hidden} then hid. */
+.foot .links a{padding:12px 7px;margin:-12px 0}
+.foot .links a:hover{color:var(--t1)}
+.colophon{padding:0 0 44px;font-family:var(--mono);font-size:11.5px;line-height:1.9;letter-spacing:.03em;color:var(--t3);max-width:82ch}
+
+/* ═══ Shared code-token palette — identical to site/assets/style.css ═══════ */
+.hljs{color:#C8D4E3}
+.hljs-comment,.hljs-quote{color:#6B7C93;font-style:italic}
+.hljs-keyword,.hljs-class,.hljs-type{color:#C4B5FD}
+.hljs-string,.hljs-regexp,.hljs-meta-string{color:#5EEAD4}
+.hljs-number,.hljs-literal,.hljs-symbol{color:#FBBF24}
+.hljs-function,.hljs-title,.hljs-built_in,.hljs-section{color:#7DD3FC}
+.hljs-attr,.hljs-attribute,.hljs-property{color:#93C5FD}
+.hljs-variable,.hljs-template-variable,.hljs-subst{color:#FDA4AF}
+.hljs-meta,.hljs-meta-keyword,.hljs-name,.hljs-doctag{color:#FDBA74}
+.hljs-tag,.hljs-operator,.hljs-bullet,.hljs-punctuation{color:#8195AC}
+.hljs-params{color:#C8D4E3}
+
+/* ── Responsive: every collapsible track is minmax(0,1fr) ────────────────── */
+.frame,.codewrap,.lcol,.seam-node,.trace{min-width:0}
+@media(max-width:560px){
+  .cta{flex-direction:column;gap:9px}
+  .btn{width:100%;justify-content:center}
+}
 </style>
-<style>:root{--accent:#e9a23b;--accent-2:#c77b2e}</style>
 </head>
 <body>
-<header class="site-header"><div class="wrap nav">
-    <a class="brand" href="./index.html"><span class="tile">
-      <img src="./assets/brand/mark.svg" alt="" width="34" height="34">
-    </span>Athar</a>
-    <div class="nav-spacer"></div>
-    <nav class="nav-links">
-      <a href="./index.html#features">Features</a>
-      <a href="./index.html#privacy">Privacy</a>
-      <a href="./docs.html">Docs</a>
-      <a href="https://github.com/vul-os/athar" target="_blank" rel="noopener">GitHub</a>
-    </nav>
-    <a class="vulos-badge" href="https://vulos.org" target="_blank" rel="noopener" title="Part of Vulos">
-      <img src="./assets/vulos-logo.png" alt="Vulos">Part of Vulos
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="./index.html" aria-label="Athar home">
+      <span class="tile"><img src="./assets/brand/mark.svg" alt="" width="30" height="30"></span>
+      Athar
+      <span class="ar" lang="ar" dir="rtl">أثر</span>
     </a>
-  </div></header>
-<main>
-  <section class="hero"><div class="wrap">
-    <span class="eyebrow">No cookies · No third-party lookups · One binary</span>
-    <h1 class="wordmark" style="margin:26px 0 0">Athar</h1>
-    <p class="tagline">Analytics where the data never leaves your server.</p>
-    <p class="blurb">Athar (أثر — "trace, footprint," and "impact") is a self-hosted web analytics tool with heatmaps and ecommerce tooling. It ships as a single static Go binary with the dashboard embedded — run it on a laptop, a home server, a Raspberry Pi, or a cloud box. SQLite by default with zero setup; Postgres is a config flag on the same binary.</p>
-    <div class="cta-row">
-      <a class="btn btn-primary" href="#quickstart">Get started</a>
+    <nav class="nav-links" id="secnav" aria-label="Plates">
+      <a href="#name">01 Name</a>
+      <a href="#privacy">02 Privacy</a>
+      <a href="#heatmaps">03 Heatmaps</a>
+      <a href="#features">04 Box</a>
+      <a href="#status">08 Register</a>
+    </nav>
+    <div class="nav-act">
+      <a class="ghlink" href="./docs.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Docs</span>
+      </a>
+      <a class="ghlink" href="https://github.com/vul-os/athar" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58l-.01-2.04c-3.34.72-4.04-1.61-4.04-1.61-.55-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.4 11.4 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22l-.01 3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3Z"/></svg>
+        <span>GitHub</span>
+      </a>
+      <a class="iconbtn vulos-btn" href="https://vulos.org" target="_blank" rel="noopener" aria-label="Vulos — open, self-hostable apps" title="Vulos — open, self-hostable apps">
+        <img src="./assets/vulos-logo.png" alt="">
+      </a>
+      <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch theme" title="Switch theme">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ═══ HERO ═══════════════════════════════════════════════════════════════ -->
+<section class="hero" id="top">
+  <svg class="hero-rings" viewBox="0 0 600 600" aria-hidden="true">
+    <circle cx="500" cy="100" r="58" fill="none" stroke="var(--amber)" stroke-width="14" opacity=".17"/>
+    <circle cx="500" cy="100" r="122" fill="none" stroke="var(--amber)" stroke-width="7" opacity=".13"/>
+    <circle cx="500" cy="100" r="196" fill="none" stroke="var(--amber)" stroke-width="3.5" opacity=".10"/>
+    <circle cx="500" cy="100" r="278" fill="none" stroke="var(--amber)" stroke-width="2" opacity=".07"/>
+  </svg>
+  <div class="wrap">
+    <p class="hero-eyebrow rv in">
+      <svg class="ringmark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="3"/><circle cx="16" cy="16" r="8" stroke-width="2" opacity=".6"/><circle cx="16" cy="16" r="13" stroke-width="1.6" opacity=".3"/></svg>
+      Self-hosted analytics · v0.1.0, early
+    </p>
+    <h1 class="rv in">See the trace.<br><em>Never the person.</em></h1>
+    <p class="hero-sub rv in">Athar (أثر — Arabic for <b>trace, impact</b>) is self-hosted web analytics with heatmaps and ecommerce tooling, in one Go binary. No cookie, no third-party collector, no consent banner for the default install — because the beacon never leaves the server you run it on.</p>
+    <div class="cta rv in">
+      <a class="btn btn-primary" href="#run">Run it
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </a>
       <a class="btn btn-ghost" href="./docs.html">Read the docs</a>
-      <a class="btn btn-ghost" href="https://github.com/vul-os/athar" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="btn btn-ghost" href="https://github.com/vul-os/athar" target="_blank" rel="noopener">Source</a>
     </div>
-    <div class="hero-visual"><img src="./screenshots/dashboard-dark.png" alt="The Athar dashboard: visitors, pageviews, bounce rate and revenue, with a traffic chart, click heatmap and per-page breakdowns" loading="lazy"></div>
-  </div></section>
 
-  <section class="section" id="features"><div class="wrap">
-    <h2>What's in the box</h2>
-    <p class="lead">Umami and Ackee are MIT but pageviews-only. PostHog has heatmaps but needs ClickHouse, Kafka and Redis. Matomo's heatmaps are a paid plugin. Plausible, GoatCounter and OpenReplay are copyleft. MIT, lightweight, heatmaps, and ecommerce in one binary was the gap.</p>
-    <div class="grid">
-      <div class="card"><div class="dot"></div><h3>Cookieless collection</h3><p>The tracker sets and reads no cookie and no storage. Visitor identity is a daily, salted hash computed server-side — nothing for a visitor to clear, nothing to ask consent for.</p></div>
-      <div class="card"><div class="dot"></div><h3>Heatmaps</h3><p>Click, scroll-depth, and per-10%-band attention samples, stored as page-relative percentages with the clicked element's CSS selector — not pixels, not a DOM snapshot. No text, no form values, no keystrokes.</p></div>
-      <div class="card"><div class="dot"></div><h3>A tiny tracker</h3><p><code>athar.js</code> is 3.3 KB raw, 1.6 KB gzipped. Auto pageviews including SPA route changes, custom events, revenue events — one script tag.</p></div>
-      <div class="card"><div class="dot"></div><h3>Local GeoIP</h3><p>Country, region and city resolved in-process from a local MaxMind-format <code>.mmdb</code> file. No lookup service, no network call. Unconfigured, the location fields are simply empty.</p></div>
-      <div class="card"><div class="dot"></div><h3>Full reporting</h3><p>Pageviews, visitors, sessions, bounce rate, average visit time, top/entry/exit pages, referrers, UTM campaigns, browser/OS/device/screen/language, geography, custom events, realtime active visitors, and revenue totals per currency.</p></div>
-      <div class="card"><div class="dot"></div><h3>Real access control</h3><p>Argon2id password hashing, server-side sessions, double-submit CSRF on every state-changing route, per-username-and-address rate-limited login, per-website owner/editor/viewer roles, and revocable public share links.</p></div>
+    <div class="strip rv in">
+      <i><b>0</b> cookies, ever</i>
+      <i><b>1</b> binary — collector, API, dashboard</i>
+      <i><b>1.6&nbsp;KB</b> tracker, gzipped</i>
+      <i><b>2</b> databases, one schema</i>
+      <i>MIT <b>/</b> Apache-2.0</i>
     </div>
-  </div></section>
 
-  <section class="section" id="quickstart"><div class="wrap">
-    <h2>Quick start</h2>
-    <p class="lead">Build from source and it listens on loopback with a SQLite file next to the binary. No account, no cloud, nothing to sign up for.</p>
-    <div class="quick">
-      <div class="codeblock">
-        <div class="bar"><i></i><i></i><i></i></div>
-        <pre><span class="c"># build from source — Go 1.25+ and Node 22+</span>
+    <div class="fig rv in">
+      <div class="frame">
+        <div class="chrome"><i></i><i></i><i></i><span class="addr">your-athar-host — Overview · 30 days</span></div>
+        <img class="shot shot-dark" src="./screenshots/dashboard-dark.png" width="2880" height="1800" alt="Athar dashboard overview in dark theme: five stat cards (visitors, pageviews, sessions, bounce rate, average visit), a revenue row, and a 30-day pageview trend chart with a visible traffic spike.">
+        <img class="shot shot-light" src="./screenshots/dashboard-light.png" width="2880" height="1800" alt="Athar dashboard overview in light theme: five stat cards (visitors, pageviews, sessions, bounce rate, average visit), a revenue row, and a 30-day pageview trend chart with a visible traffic spike.">
+      </div>
+      <p class="figcap"><span class="n">FIG.&nbsp;1</span><span><b>The reporting overview, as shipped.</b> Pageviews, visitors, bounce rate and revenue per currency, over a 30-day trend with a previous-period ghost. Captured against a seeded demo instance — 1,909 visits and 4,804 pageviews across 30 days, including one deliberate spike day.</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PLATE 01 · THE NAME ════════════════════════════════════════════════ -->
+<section class="plate" id="name">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 01</span><span class="label">The name</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <div class="explain">
+      <div>
+        <h2 class="rv">A trace, <em>on purpose.</em></h2>
+        <p class="lead rv">أثر (<i>athar</i>) means both <b>trace</b> and <b>impact</b> — the mark left behind, and the fact that it mattered. Every analytics tool is in the business of recording a trace of what happened on a page. The question that actually matters is <b>who ends up holding it</b>.</p>
+        <p class="lead rv">Athar's answer: only the operator, on infrastructure they control. There is no third party in the request path to receive a copy of the beacon, and no cookie to leave one on the visitor's device. The trace forms, gets counted, and stops at your server.</p>
+        <div class="rows rv">
+          <div class="row"><span class="k">Third parties</span><span class="v"><b>None in the request path.</b> The script is served by your instance and beacons back to it.</span></div>
+          <div class="row"><span class="k">On the device</span><span class="v"><b>Nothing.</b> No cookie set or read, no localStorage, no sessionStorage, no identifier of any kind.</span></div>
+          <div class="row"><span class="k">Weight</span><span class="v"><b>3.3 KB raw, 1.6 KB gzipped.</b> <code>?source=1</code> always serves the readable original, so anyone can check what a site is running.</span></div>
+        </div>
+      </div>
+      <div class="plateimg rv" aria-hidden="true">
+        <!-- The mark, redrawn at plate scale: a point of contact and three
+             rings spreading from it, densest at the centre and fading out. -->
+        <svg viewBox="0 0 320 320" role="img" aria-labelledby="illoAT">
+          <title id="illoAT">A single point of contact with three rings spreading outward and fading — a trace</title>
+          <circle cx="160" cy="160" r="128" fill="none" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 8"/>
+          <g class="pulse-rings">
+            <circle cx="160" cy="160" r="36" fill="none" stroke="var(--amber)" stroke-width="10" opacity=".14"/>
+            <circle cx="160" cy="160" r="70" fill="none" stroke="var(--amber)" stroke-width="6" opacity=".28"/>
+            <circle cx="160" cy="160" r="106" fill="none" stroke="var(--amber)" stroke-width="3.4" opacity=".45"/>
+          </g>
+          <circle cx="160" cy="160" r="10" fill="var(--amber)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PLATE 02 · PRIVACY ═════════════════════════════════════════════════ -->
+<section class="plate" id="privacy">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 02</span><span class="label">The trace stops at your door</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">Two days. Same visitor. <em>No thread between them.</em></h2>
+    <p class="lead rv">Heatmaps and behavioural sampling are only defensible because the operator self-hosts and holds the data plainly — this is not a claim that Athar is content-blind. What it removes is everything that does not need to exist for that: a persistent identifier, a third-party lookup, a raw IP sitting in a table.</p>
+
+    <div class="split">
+      <div class="rv">
+        <div class="codewrap">
+          <div class="codebar"><i></i><i></i><i></i><span class="path">identity.go</span></div>
+          <pre><code>1 · once per instance, generated and stored
+<span style="color:#93C5FD">instance_secret</span> = random(32 bytes)
+
+2 · recomputed once per UTC day
+<span style="color:#93C5FD">salt</span> = HMAC(<span style="color:#FDA4AF">instance_secret</span>, <span style="color:#5EEAD4">"2026-07-31"</span>)
+
+3 · per beacon — the IP is discarded right after this line
+<span style="color:#93C5FD">visitor</span> = HMAC(<span style="color:#FDA4AF">salt</span>, <span style="color:#FDA4AF">website_id</span> ‖ <span style="color:#FDA4AF">ip</span> ‖ <span style="color:#FDA4AF">user_agent</span>)</code></pre>
+        </div>
+      </div>
+      <div class="rv" aria-hidden="true">
+        <div class="plateimg">
+          <svg viewBox="0 0 320 200" role="img" aria-labelledby="illoPR" style="max-width:360px">
+            <title id="illoPR">Two separate ring traces, labelled Monday and Tuesday, joined by a dashed line broken in the middle by a cross</title>
+            <g transform="translate(70 96)">
+              <circle r="16" fill="none" stroke="var(--amber)" stroke-width="4" opacity=".2"/>
+              <circle r="30" fill="none" stroke="var(--amber)" stroke-width="2.6" opacity=".35"/>
+              <circle r="4.5" fill="var(--amber)"/>
+              <text x="0" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="var(--t2)" font-family="var(--sans)">Monday's hash</text>
+            </g>
+            <g transform="translate(250 96)">
+              <circle r="16" fill="none" stroke="var(--amber)" stroke-width="4" opacity=".2"/>
+              <circle r="30" fill="none" stroke="var(--amber)" stroke-width="2.6" opacity=".35"/>
+              <circle r="4.5" fill="var(--amber)"/>
+              <text x="0" y="52" text-anchor="middle" font-size="12" font-weight="700" fill="var(--t2)" font-family="var(--sans)">Tuesday's hash</text>
+            </g>
+            <line x1="106" y1="96" x2="150" y2="96" stroke="var(--t3)" stroke-width="2" stroke-dasharray="4 5"/>
+            <line x1="170" y1="96" x2="214" y2="96" stroke="var(--t3)" stroke-width="2" stroke-dasharray="4 5"/>
+            <g transform="translate(160 96)" stroke="var(--t2)" stroke-width="3" stroke-linecap="round"><line x1="-7" y1="-7" x2="7" y2="7"/><line x1="7" y1="-7" x2="-7" y2="7"/></g>
+            <text x="160" y="24" text-anchor="middle" font-size="11" font-weight="700" letter-spacing=".04em" fill="var(--t3)" font-family="var(--sans)">NO DERIVABLE LINK</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="cols3 rv">
+      <div>
+        <h4>Unlinkable across days</h4>
+        <p>The salt rotates at UTC midnight from an HMAC of the long-lived secret — not from the previous day's salt. Today's hash for a visitor cannot be derived from yesterday's. Cross-day tracking is absent from what is stored, not merely unimplemented.</p>
+      </div>
+      <div>
+        <h4>No cross-site profile</h4>
+        <p>The website id sits inside the hash, ahead of a separator. The same person on two sites hosted by one instance produces two unrelated hashes — the operator's own database cannot join them.</p>
+      </div>
+      <div>
+        <h4>The IP never lands</h4>
+        <p>The raw IP is used for exactly two things at ingest — this hash, and a local GeoIP lookup against an <code>.mmdb</code> file on disk — then discarded. Never written to the database, never logged, never in an error message.</p>
+      </div>
+    </div>
+
+    <div class="callout rv">
+      <b>Not a compliance certificate.</b> Cookieless and no-PII by construction is a GDPR-friendly default — no cookie banner is needed for the stock configuration — but that describes the software's behaviour, not a guarantee that any particular deployment is compliant. That depends on how an operator configures, discloses and runs their own instance. Full threat model, including what a stolen database can and cannot recover: <a href="./docs.html#privacy">Privacy docs →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PLATE 03 · HEATMAPS ════════════════════════════════════════════════ -->
+<section class="plate" id="heatmaps">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 03</span><span class="label">Where people actually go</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">Every click leaves a trace. Enough of them <em>draw a picture.</em></h2>
+    <p class="lead rv">That is what a heatmap literally is: hundreds of individual traces, each just a position and a selector, accumulated until a pattern is visible. A pattern is only worth reading over the page it was left on — so Athar draws it over the page.</p>
+
+    <div class="fig rv">
+      <div class="frame">
+        <div class="chrome"><i></i><i></i><i></i><span class="addr">your-athar-host — Heatmap · /pricing · ~1920px</span></div>
+        <img class="shot shot-dark" src="./screenshots/heatmap-click-dark.png" width="2360" height="1952" alt="Athar's click heatmap in dark theme for the page /pricing at the 1920-pixel viewport bucket: a red-to-blue click density field drawn directly over a full-page screenshot of the pricing page, with the hottest areas sitting on the three plan buttons, the navigation bar and the footer links. Beside it, a most-clicked-elements list and the page-capture panel with its privacy notice.">
+        <img class="shot shot-light" src="./screenshots/heatmap-click-light.png" width="2360" height="1952" alt="Athar's click heatmap in light theme for the page /pricing at the 1920-pixel viewport bucket: a red-to-blue click density field drawn directly over a full-page screenshot of the pricing page, with the hottest areas sitting on the three plan buttons, the navigation bar and the footer links. Beside it, a most-clicked-elements list and the page-capture panel with its privacy notice.">
+      </div>
+      <p class="figcap"><span class="n">FIG.&nbsp;2</span><span><b>Click density over the real page.</b> The backdrop is a full-page capture of <code>/pricing</code> at 1920px, uploaded by the operator; the heat is 166 recorded clicks from the seeded instance. Nothing here is arranged by hand — the screenshot pipeline reads the heat canvas's own pixels at the coordinates of each real button and refuses to save the image unless the field is hot there.</span></p>
+    </div>
+
+    <h3 class="sub rv" style="margin-top:56px">How the page gets under the heat</h3>
+    <p class="lead rv">The tracker still records three things per click and nothing else: a position as a percentage of the <b>document</b>, the viewport size, and a short CSS selector. It captures no DOM, no text, no form values, no screenshot — that boundary has not moved, and it is why the backdrop has to come from somewhere else.</p>
+
+    <div class="rows rv">
+      <div class="row"><span class="k">Where the picture comes from</span><span class="v">An operator uploads a full-page capture of their own page, keyed to one path and one viewport width. <b>Athar never takes it and never fetches your site.</b> No DOM recorder ships to visitors, and the server makes no outbound request — the two alternatives, and why each was rejected, are argued out in <code>backend/internal/api/pageimages.go</code>.</span></div>
+      <div class="row"><span class="k">Why it lines up</span><span class="v">Both sides are proportions of the same document. A full-page capture at viewport width W is exactly one document wide and one document tall, so a sample at (x%, y%) of the rendered image is <b>the pixel that was pressed</b> — at any display size, and at any capture device pixel ratio.</span></div>
+      <div class="row"><span class="k">When it would not</span><span class="v">Two ways, both checked rather than hoped for. An above-the-fold capture has the viewport's aspect ratio rather than the document's, and the view says so in plain words. And a capture is only ever shown for a <b>single</b> recorded viewport width — averaging a 390px layout and a 1440px one onto one picture is a lie that looks authoritative.</span></div>
+      <div class="row"><span class="k">What it costs you</span><span class="v">A manual step, and honesty about it. The capture lives in your own database and is served only to signed-in users of that website, so it should be the page as a logged-out visitor sees it. The dashboard says exactly that, next to the upload button, every time.</span></div>
+    </div>
+
+    <div class="figpair">
+      <div class="rv">
+        <div class="frame">
+          <div class="chrome"><i></i><i></i><i></i><span class="addr">/docs/getting-started · no capture</span></div>
+          <img class="shot shot-dark" src="./screenshots/heatmap-schematic-dark.png" width="2360" height="1326" alt="The same Athar heatmap view in dark theme for a page with no uploaded capture: the density field is drawn over a wireframe of dashed selector boxes on a neutral grid, badged SCHEMATIC, with a caption stating it is not a picture of the page.">
+          <img class="shot shot-light" src="./screenshots/heatmap-schematic-light.png" width="2360" height="1326" alt="The same Athar heatmap view in light theme for a page with no uploaded capture: the density field is drawn over a wireframe of dashed selector boxes on a neutral grid, badged SCHEMATIC, with a caption stating it is not a picture of the page.">
+        </div>
+        <p class="figcap"><span class="n">FIG.&nbsp;3</span><span><b>No capture, and it says so.</b> Where no image exists for the selected page and viewport, the view falls back to a wireframe built only from real recorded coordinates, badges itself <code>SCHEMATIC</code>, and never borrows another page's picture to fill the gap.</span></p>
+      </div>
+      <div class="rv">
+        <h3 class="sub">What a sample carries</h3>
+        <ul class="checklist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Click</b> — a position, and the CSS selector of the element pressed.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Scroll</b> — the furthest depth that session reached.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Attention</b> — dwell time per tenth-of-page band.</span></li>
+        </ul>
+        <h3 class="sub" style="margin-top:26px">What it never carries</h3>
+        <ul class="checklist no">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg><span>No DOM snapshot, no page text, no automatic screenshot.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg><span>No form values, no keystrokes.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg><span>No session replay — a different feature, deliberately not this one.</span></li>
+        </ul>
+        <p class="lead" style="font-size:14.4px">Positions are percentages of the document rather than viewport pixels, and the selector rides alongside, which is what keeps a click map meaningful after a redesign.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PLATE 04 · WHAT'S IN THE BOX ═══════════════════════════════════════ -->
+<section class="plate" id="features">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 04</span><span class="label">What's in the box</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">Everything a self-hosted analytics stack needs. <em>Not much it doesn't.</em></h2>
+    <p class="lead rv">Umami and Ackee are genuinely MIT and genuinely light, but stop at pageview counting. PostHog has heatmaps and needs ClickHouse, Kafka and Redis behind it. Matomo's heatmap tooling sits behind a paid plugin on a GPL core. MIT-or-Apache, lightweight, with heatmaps, ecommerce and built-in GeoIP in one binary was the specific combination missing — the <a href="#compare">full comparison</a> is Plate 09.</p>
+
+    <dl class="rows rv">
+      <div class="row"><dt>Tracking</dt><dd>Cookieless by construction. Automatic pageviews including SPA route changes via <code>pushState</code>/<code>replaceState</code>/<code>popstate</code>, custom events, revenue events, and opt-in heatmap sampling. One script tag.</dd></div>
+      <div class="row"><dt>Heatmaps</dt><dd>Click density, scroll depth and attention bands, per page and per recorded viewport width, drawn over an operator-supplied capture of the page or over an honest schematic.</dd></div>
+      <div class="row"><dt>Reporting</dt><dd>Pageviews, unique visitors, sessions, bounce rate, average visit time; top, entry and exit pages; referrers and UTM campaigns; browser, OS, device, screen and language; country, region and city; custom events; realtime active visitors.</dd></div>
+      <div class="row"><dt>Ecommerce</dt><dd><code>athar.revenue(amount, currency, orderId)</code>. Integer minor units per currency, never floats, never summed across currencies.</dd></div>
+      <div class="row"><dt>Geography</dt><dd>In-process GeoIP from a local MaxMind-format <code>.mmdb</code> — no lookup service, no network call. Not bundled, for size and licence; unset simply leaves the location fields empty.</dd></div>
+      <div class="row"><dt>Access control</dt><dd>argon2id (64 MiB, t=2), server-side sessions storing only a SHA-256 of the token, httpOnly <code>SameSite=Lax</code> cookies, double-submit CSRF on every state-changing route, login rate limiting keyed on username <em>and</em> address, owner/editor/viewer roles. Fail-closed throughout.</dd></div>
+      <div class="row"><dt>Hygiene</dt><dd>Bot traffic dropped at ingest rather than recorded. Retention deletes whole visitor sessions past a configurable age, cascading to their events, heatmap samples, revenue rows and page captures — so a purge never leaves orphans to skew a later bounce rate.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ═══ PLATE 05 · ONE BINARY, EITHER GROUND ═══════════════════════════════ -->
+<section class="plate" id="seam">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 05</span><span class="label">One binary, either ground</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">SQLite on your laptop. Postgres in the cloud. <em>Same binary either way.</em></h2>
+    <p class="lead rv">The difference between a box you own and a managed deployment is one config value — <code>database</code> — not a fork. One <code>database/sql</code> implementation serves both engines; a small Dialect rewrites only placeholder syntax and a time-bucket expression. Every migration is written in the subset of SQL both engines accept literally, which is a real constraint on future schema work and the reason the two deployments cannot drift apart.</p>
+
+    <div class="seam rv">
+      <span class="seam-tag">the store seam</span>
+      <div class="seam-flow">
+        <div class="seam-core"><span class="badge">one binary</span><b>athar</b><span>collector · API · dashboard</span></div>
+        <div class="seam-join" aria-hidden="true"><i></i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg></div>
+        <div class="seam-ends">
+          <div class="seam-node"><span class="dot"></span><div><b>SQLite</b><span>bare path — zero setup, self-host default</span></div></div>
+          <div class="seam-node"><span class="dot"></span><div><b>Postgres</b><span>postgres:// DSN — hosted / managed</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <dl class="rows rv">
+      <div class="row"><dt>Standalone</dt><dd><code>./athar</code> on a home server, NAS or small VPS. Zero setup, storage is one file, loopback-bound by default.</dd></div>
+      <div class="row"><dt>Managed</dt><dd>The same binary against a <code>postgres://</code> DSN for a pooled deployment. Nothing above the storage layer changes.</dd></div>
+      <div class="row"><dt>Public</dt><dd>Reached through cloudflared, ngrok, your own Ephor, or nginx/Caddy terminating TLS in front of it.</dd></div>
+      <div class="row"><dt>Embedded</dt><dd><code>frame_ancestors</code> lets a host shell embed the dashboard as an app tile behind its own routing and auth.</dd></div>
+    </dl>
+
+    <div class="callout rv">
+      <b>The dashboard is just a client for it.</b> Closing the browser tab does not stop Athar — the collector is the same long-running process that serves the dashboard, and it keeps taking beacons for as long as it is deployed, whether or not anyone has the dashboard open. There is no separate app to quit.
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PLATE 06 · REVENUE ═════════════════════════════════════════════════ -->
+<section class="plate" id="revenue">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 06</span><span class="label">Revenue, honestly</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <div class="split">
+      <div>
+        <h2 class="rv" style="margin-top:20px">Revenue is just an event <em>with money attached.</em></h2>
+        <p class="lead rv">No separate ecommerce system, no product catalogue to sync — a purchase is a custom event with a <code>revenue</code> payload. Amounts convert to integer minor units at ingest, so money is never carried as a float, and the API reports <code>amount_minor</code> per currency rather than assuming two decimal places apply everywhere. They do not: JPY has no minor unit and KWD has three.</p>
+        <div class="callout pend rv">
+          <b>What this is not, yet:</b> there is no product-level breakdown, no cart or checkout funnel, no per-SKU reporting. Revenue today is a total per currency over a time range, attributed to the visit and event that produced it. See <a href="#status">the register</a>.
+        </div>
+      </div>
+      <div class="rv">
+        <div class="codewrap">
+          <div class="codebar"><i></i><i></i><i></i><span class="path">checkout.js</span></div>
+          <pre><code id="ecom-code" class="language-javascript">athar.revenue(49.99, 'USD', 'order_123', 'purchase');</code></pre>
+        </div>
+        <div class="codewrap" style="margin-top:13px">
+          <div class="codebar"><i></i><i></i><i></i><span class="path">GET /api/websites/{id}/revenue</span></div>
+          <pre><code id="ecom-code2" class="language-json">{ "totals": [ { "currency": "USD", "amount_minor": 483200 } ] }</code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PLATE 07 · RUN IT ══════════════════════════════════════════════════ -->
+<section class="plate" id="run">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 07</span><span class="label">Run it</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">Running end to end in <em>about a minute.</em></h2>
+    <p class="lead rv">Requires Go 1.25+ and Node 22+ to build from source — Node only to minify the tracker and drive screenshots; the dashboard itself is hand-written HTML, CSS and JS embedded straight into the binary, with no bundle to go stale. The result is one static binary. Copy it wherever you like.</p>
+    <div class="split">
+      <div class="rv">
+        <div class="codewrap">
+          <div class="codebar"><i></i><i></i><i></i><span class="path">terminal</span></div>
+          <pre><code id="qs-code" class="language-bash"># build from source
 git clone https://github.com/vul-os/athar.git
 cd athar
-npm install &amp;&amp; npm run build:all
+npm install &amp;&amp; npm run build
 ./athar
 
-<span class="c"># drop one script tag on your site</span>
-&lt;script defer src="https://analytics.example.com/athar.js"
-        data-website-id="YOUR_WEBSITE_ID"&gt;&lt;/script&gt;</pre>
+# drop one script tag on your site
+&lt;script defer src="https://your-athar-host/athar.js"
+        data-website-id="YOUR_WEBSITE_ID"
+        data-heatmap="true"&gt;&lt;/script&gt;</code></pre>
+        </div>
       </div>
-      <ol class="steps">
-        <li><span class="num">1</span><div><b>Run it</b><span>Listens on <code>http://127.0.0.1:3100</code>, stores to <code>./athar.db</code>. The first visit creates the admin account.</span></div></li>
-        <li><span class="num">2</span><div><b>Add a site</b><span>Create a website in the dashboard, then paste the one-line script tag it gives you. Add <code>data-heatmap="true"</code> to also collect heatmaps.</span></div></li>
-        <li><span class="num">3</span><div><b>Go public</b><span>Athar binds loopback by default. Reach it from the internet with a tunnel (cloudflared, ngrok, Ephor) or a reverse proxy — both talk to loopback, so nothing is bound wide open by accident.</span></div></li>
+      <ol class="steps rv">
+        <li><span class="num">01</span><div><b>Run it</b><span>Listens on <code>127.0.0.1:3100</code>, stores to <code>./athar.db</code>. The first visit creates the one admin account.</span></div></li>
+        <li><span class="num">02</span><div><b>Add a site</b><span>Create a website in the dashboard and paste the script tag it gives you. <code>data-heatmap="true"</code> turns on click, scroll and attention sampling.</span></div></li>
+        <li><span class="num">03</span><div><b>Add a page capture</b><span>Optional, and per page. Take a full-page screenshot at one viewport width and upload it from the heatmap view — that is what puts your real page under the density field.</span></div></li>
+        <li><span class="num">04</span><div><b>Go public</b><span>Athar binds loopback by default. Reach it with a tunnel or a reverse proxy — see <a href="./docs.html#self-hosting" style="color:var(--amber-ink);font-weight:650">Self-hosting</a>.</span></div></li>
       </ol>
     </div>
-  </div></section>
+  </div>
+</section>
 
-  <section class="section" id="privacy"><div class="wrap">
-    <div class="decent">
-      <h2>The daily salt</h2>
-      <p class="lead" style="margin-bottom:0">Heatmaps and behavioural capture are only ethical because the site owner self-hosts and holds the data — the operator can see their own visitors, plainly. What Athar removes is the part that doesn't need to exist: a persistent identifier, a third-party lookup, a raw IP sitting in a table.</p>
-      <div class="salt">
-<div class="step">1. once per box, generated and stored</div>
-<div><span class="k">instance_secret</span> = random(32 bytes)</div>
-<div class="step">2. recomputed once per UTC day</div>
-<div><span class="k">salt</span> = HMAC(instance_secret, "2026-07-24")</div>
-<div class="step">3. computed per beacon, IP discarded immediately after</div>
-<div><span class="k">visitor</span> = HMAC(salt, website_id || ip || user_agent)</div>
+<!-- ═══ PLATE 08 · THE REGISTER ════════════════════════════════════════════ -->
+<section class="plate" id="status">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 08</span><span class="label">The register</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">Built and exercised end to end. <em>Still young.</em> Both are true.</h2>
+    <p class="statusquote rv"><b>Status: v0.1.0, early.</b> The core collector, storage, auth and reporting paths are implemented and have been exercised end to end, but this is a young project — expect rough edges, and expect the API surface to move before 1.0.</p>
+    <p class="lead rv">Three columns rather than two, because there is a real difference between what a released version does, what is on <code>main</code> and not yet cut into a release, and what nobody has written. Collapsing the middle one into either neighbour would be a small lie in one direction or the other.</p>
+
+    <div class="ledger">
+      <div class="lcol shipped rv">
+        <div class="lhead"><span class="sw"></span><b>Shipped in 0.1.0</b></div>
+        <div class="lrow"><b>Cookieless, no-PII tracking</b> — daily-salted hash, unlinkable across days and sites.</div>
+        <div class="lrow"><b>Heatmap view</b> — click density, scroll depth, attention bands, selector list.</div>
+        <div class="lrow"><b>In-process GeoIP</b>, bot filtering at ingest.</div>
+        <div class="lrow"><b>Full reporting API</b> — the same data the dashboard renders.</div>
+        <div class="lrow"><b>Auth</b> — argon2id, server-side sessions, CSRF, rate limiting, per-website roles.</div>
+        <div class="lrow"><b>Public share links</b> — server-side, API-only; no dashboard toggle yet.</div>
+        <div class="lrow"><b>Retention</b>, multiple websites, REST API.</div>
+        <div class="lrow"><b>The Store seam</b> — SQLite or Postgres, one binary.</div>
       </div>
-      <div class="cols">
-        <div><h4>Unlinkable across days</h4><p>The salt rotates at UTC midnight, so today's hash for a visitor has no mathematical relationship to yesterday's. Cross-day tracking isn't merely unimplemented — it can't be derived from what's stored.</p></div>
-        <div><h4>No cross-site profile</h4><p>The website id sits inside the hash itself, so the same person on two sites hosted by one Athar instance produces two unrelated hashes. One operator cannot build a cross-site profile out of their own database.</p></div>
-        <div><h4>The IP never lands</h4><p>The raw IP is used for exactly two things at ingest — this hash and a local GeoIP lookup — then it's gone. It is never written to the database or to a log.</p></div>
+      <div class="lcol inmain rv">
+        <div class="lhead"><span class="sw"></span><b>On main, unreleased</b></div>
+        <div class="lrow"><b>Heatmaps over the real page</b> — an operator-uploaded full-page capture per page and per viewport width, stored in your own database, composited under the click field.</div>
+        <div class="lrow"><b>Honest fallback</b> — the wireframe schematic, badged as one, wherever no capture exists for the selected page and viewport.</div>
+        <div class="lrow"><b>Capture management in the dashboard</b> — upload, replace and remove, editor-only, with the privacy consequence stated at the point of upload.</div>
+        <div class="lrow">Everything here is on <code>main</code> and covered by tests, but is <b>not in the 0.1.0 you can download</b>. It lands in the next release.</div>
+      </div>
+      <div class="lcol planned rv">
+        <div class="lhead"><span class="sw"></span><b>Not built yet</b></div>
+        <div class="lrow"><b>Website settings UI</b> — share-link toggle and delete are API-only today.</div>
+        <div class="lrow"><b>Funnels</b>, including a cart/checkout funnel for revenue events.</div>
+        <div class="lrow"><b>Segmentation / filtering UI</b> in the dashboard.</div>
+        <div class="lrow"><b>TOTP two-factor</b> — the column exists; nothing generates or verifies a code.</div>
+        <div class="lrow"><b>Teams UI</b>, account and user administration UI — API-only today.</div>
+        <div class="lrow"><b>Installability</b> — a web manifest and app icons; the offline service worker stays out.</div>
+        <div class="lrow"><b>Data export / import</b>, a maintained Docker image.</div>
+        <div class="lrow"><b>Browser end-to-end tests</b> on the production bundle.</div>
       </div>
     </div>
-  </div></section>
+    <p class="lead rv" style="font-size:14.4px">Kept current release by release: <a href="./docs.html#roadmap">Roadmap →</a> and <a href="./docs.html#changelog">Changelog →</a></p>
+  </div>
+</section>
 
-  <section class="section"><div class="wrap">
-    <h2>Cookieless by construction</h2>
-    <p class="lead" style="margin-bottom:0">No cookie is set, so there is no cookie banner to show for the default configuration — this is cookieless and no-PII by design, which is a GDPR-friendly posture. It is not a compliance claim: whether a given deployment is GDPR-compliant depends on how it's run, not on the software alone.</p>
-  </div></section>
-
-  <section class="section"><div class="wrap">
-    <div class="vulos-band">
-      <img src="./assets/vulos-logo.png" alt="Vulos logo">
-      <div>
-        <h3>Part of Vulos</h3>
-        <p><a href="https://vulos.org" target="_blank" rel="noopener" style="color:var(--text);font-weight:600">Vulos</a> is a family of open, self-hostable apps built on one thesis: your data does not have to leave your machine to be useful. Athar is a fully standalone product — it never requires Vulos infrastructure to run. Self-hosting it yourself is always the default path, and never second-class.</p>
-        <a class="more" href="https://vulos.org" target="_blank" rel="noopener">Explore Vulos →</a>
-      </div>
+<!-- ═══ PLATE 09 · WHY NOT X ═══════════════════════════════════════════════ -->
+<section class="plate" id="compare">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 09</span><span class="label">Why not just use X</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">The specific gap <em>this fills.</em></h2>
+    <p class="lead rv">In fairness to the table: Umami and Ackee are genuinely light and genuinely MIT, they just stop at pageviews. PostHog is the most feature-complete of the group but is a product-analytics platform first, on a multi-service stack. Matomo's ecommerce is mature and its heatmaps are a paid plugin. Plausible, GoatCounter and OpenReplay are copyleft licences many businesses avoid embedding.</p>
+    <div class="cmpwrap rv">
+      <table class="cmp">
+        <thead><tr><th>Project</th><th>Licence</th><th>Weight</th><th>Heatmaps</th><th>Ecommerce</th><th>Built-in GeoIP</th></tr></thead>
+        <tbody>
+          <tr class="us"><td>Athar</td><td>MIT OR Apache-2.0</td><td>Single Go binary</td><td class="yes">Click / scroll / attention</td><td class="yes">Revenue, multi-currency</td><td class="yes">Local .mmdb, no network call</td></tr>
+          <tr><td>Umami</td><td>MIT</td><td>Node/Next.js + Postgres or MySQL</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
+          <tr><td>Plausible CE</td><td>AGPL-3.0</td><td>Elixir + ClickHouse</td><td class="no">—</td><td class="no">—</td><td class="partial">Optional, self-configured</td></tr>
+          <tr><td>Matomo</td><td>GPL-3.0+</td><td>Heavy — PHP + MySQL</td><td class="partial">Paid plugin</td><td class="yes">Yes</td><td class="partial">Plugin</td></tr>
+          <tr><td>PostHog</td><td>Mostly MIT, some proprietary</td><td>Heavy — ClickHouse + Kafka + Redis</td><td class="partial">Toolbar heatmaps</td><td class="no">Not the focus</td><td class="no">—</td></tr>
+        </tbody>
+      </table>
     </div>
-  </div></section>
+  </div>
+</section>
+
+<!-- ═══ CLOSING PLATE · THE READING ════════════════════════════════════════ -->
+<section class="plate" id="reading">
+  <div class="wrap">
+    <div class="register rv"><span class="no">PLATE 10</span><span class="label">The reading</span><span class="depth" data-depth>DEPTH <b>—</b></span></div>
+    <div class="ruler rv" aria-hidden="true"></div>
+    <h2 class="rv">This is the whole trace. <em>All of it.</em></h2>
+    <p class="lead rv">A heatmap sample in Athar carries three things and no more. Below are those three fields, for you, on this page, computed in your browser in the last second. They are the entire shape of what a heatmap knows about a reader.</p>
+
+    <div class="trace rv">
+      <div class="trace-head">heat_samples — this session, computed locally, never transmitted</div>
+      <div class="trace-grid">
+        <div class="trace-cell">
+          <p class="k">scroll_pct</p>
+          <p class="n" id="rdDepth">—</p>
+          <p class="d">The furthest point down this document you have reached, as a percentage of its full height.</p>
+        </div>
+        <div class="trace-cell">
+          <p class="k">dwell_ms</p>
+          <p class="n" id="rdDwell">—</p>
+          <p class="d">Time with this page in view, which Athar buckets into tenths of the page rather than storing whole.</p>
+        </div>
+        <div class="trace-cell">
+          <p class="k">viewport_w × viewport_h</p>
+          <p class="n" id="rdViewport">—</p>
+          <p class="d">Your viewport, so a map recorded on a phone is never averaged into one recorded on a desktop.</p>
+        </div>
+      </div>
+      <p class="trace-foot"><b>None of this was sent anywhere.</b> This page carries no tracker, no analytics and no network call of any kind — the three numbers above were computed by twenty lines of JavaScript you can read in the source of this file, and they will be gone when you close the tab. On a site running Athar they would go to one place: a file on the operator's own disk.</p>
+    </div>
+
+    <p class="lead rv">On a real install there would be a little more than this alongside — the page path, the referrer, a coarse country from a local database file, your browser and operating system, and one salted hash that cannot be recomputed after midnight. That is the complete list. It is short on purpose, and it is the whole argument.</p>
+
+    <div class="cta rv" style="margin-top:32px">
+      <a class="btn btn-primary" href="#run">Run it
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="./docs.html">Read the docs</a>
+    </div>
+  </div>
+</section>
+
 </main>
-<footer class="site-footer"><div class="wrap foot">
-    <div class="left"><img src="./assets/vulos-logo.png" alt="Vulos"> <span>Part of <a href="https://vulos.org" target="_blank" rel="noopener" style="color:var(--text)">Vulos</a> — open, self-hostable apps. Standalone by design.</span></div>
+
+<footer class="site-footer">
+  <div class="wrap foot">
+    <div class="left"><img src="./assets/vulos-logo.png" alt="Vulos"> <span>Part of <a href="https://vulos.org" target="_blank" rel="noopener">Vulos</a> — open, self-hostable apps.</span></div>
     <div class="links">
       <a href="./docs.html">Docs</a>
       <a href="https://github.com/vul-os/athar" target="_blank" rel="noopener">GitHub</a>
-      <a href="./LICENSE.txt">License</a>
+      <a href="./LICENSE.txt">Licence</a>
       <a href="https://vulos.org" target="_blank" rel="noopener">vulos.org</a>
     </div>
-  </div></footer>
+  </div>
+  <div class="wrap colophon">
+    Set in Fraunces, Schibsted Grotesk and IBM Plex Mono — all three self-hosted from ./assets/fonts, with their licences alongside. Figures are unretouched captures of the shipped dashboard, regenerated by scripts/site-screenshots.mjs. No CDN, no remote font, no remote image, no analytics, no network call of any kind.
+  </div>
+</footer>
+
+<script src="./assets/vendor/highlight.min.js"></script>
+<script>
+document.documentElement.classList.add('js');
+
+// ── Theme toggle, shared key with docs.html ───────────────────────────────
+(function(){
+  var KEY='athar-site-theme', root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click', function(){
+    var next = root.getAttribute('data-theme')==='dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem(KEY, next); }catch(e){}
+  });
+})();
+
+// ── Highlight the code panels with the same vendored hljs build the docs
+//    use, so the palette and the tokenising are identical. ────────────────
+(function(){
+  if (!window.hljs) return;
+  document.querySelectorAll('#qs-code, #ecom-code, #ecom-code2').forEach(function(el){
+    var m = (el.className||'').match(/language-(\w+)/);
+    var lang = m ? m[1] : 'bash';
+    try {
+      var res = hljs.highlight(el.textContent, { language: lang });
+      el.innerHTML = res.value;
+      el.classList.add('hljs');
+    } catch(e){ /* leave as plain text */ }
+  });
+})();
+
+// ── The rulers ────────────────────────────────────────────────────────────
+// Ten ticks per plate, with one struck amber at that plate's own depth
+// through the document, and the same figure stamped in the register. The
+// depth is measured from the real rendered layout — a page arguing for
+// honest measurement does not get to print invented numbers on its own
+// scale — and re-measured on resize, since the layout changes with width.
+//
+// Ticks are built here rather than written into the markup because they are
+// pure furniture: eleven empty <i>s per plate would be eleven pieces of
+// noise in the document for a screen reader to walk past. The rulers are
+// aria-hidden, and every depth is also stated as text in the register.
+(function(){
+  var rulers = [].slice.call(document.querySelectorAll('.ruler'));
+  var stamps = [].slice.call(document.querySelectorAll('[data-depth]'));
+
+  rulers.forEach(function(ruler){
+    for (var i = 0; i <= 10; i++){
+      var tick = document.createElement('i');
+      tick.style.left = (i * 10) + '%';
+      if (i === 10) tick.style.left = 'calc(100% - 1px)';
+      ruler.appendChild(tick);
+    }
+    var mark = document.createElement('span');
+    mark.className = 'mark';
+    ruler.appendChild(mark);
+  });
+
+  function measure(){
+    var docH = document.documentElement.scrollHeight || 1;
+    rulers.forEach(function(ruler, i){
+      var plate = ruler.closest('.plate');
+      if (!plate) return;
+      var mid = plate.offsetTop + plate.offsetHeight / 2;
+      var pct = Math.max(0, Math.min(100, (mid / docH) * 100));
+      var mark = ruler.querySelector('.mark');
+      if (mark) mark.style.left = 'calc(' + pct.toFixed(1) + '% - 1px)';
+      var stamp = stamps[i];
+      if (stamp) stamp.innerHTML = 'DEPTH <b>' + Math.round(pct) + '%</b>';
+    });
+  }
+  measure();
+  window.addEventListener('load', measure);
+  window.addEventListener('resize', measure);
+})();
+
+// ── Active plate in the header nav ────────────────────────────────────────
+(function(){
+  var links = [].slice.call(document.querySelectorAll('#secnav a'));
+  var sections = links
+    .map(function(a){ return document.getElementById(a.getAttribute('href').slice(1)); })
+    .filter(Boolean);
+  if (!sections.length) return;
+  function onScroll(){
+    var y = window.scrollY + 120;
+    var current = sections[0];
+    sections.forEach(function(s){ if (s.offsetTop <= y) current = s; });
+    links.forEach(function(a){
+      a.classList.toggle('active', current && current.id === a.getAttribute('href').slice(1));
+    });
+  }
+  document.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+})();
+
+// ── The reading: three numbers, computed here, sent nowhere ───────────────
+// This is the closing plate's whole implementation. It is deliberately short
+// and deliberately readable, because the plate's claim is "read the source"
+// and a claim like that has to survive someone taking it up. There is no
+// fetch, no sendBeacon, no image ping and no storage write in this file.
+(function(){
+  var depthEl = document.getElementById('rdDepth');
+  var dwellEl = document.getElementById('rdDwell');
+  var vpEl = document.getElementById('rdViewport');
+  if (!depthEl || !dwellEl || !vpEl) return;
+
+  var start = Date.now();
+  var maxDepth = 0;
+
+  function docHeight(){
+    var b = document.body, e = document.documentElement;
+    return Math.max(b.scrollHeight, b.offsetHeight, e.clientHeight, e.scrollHeight, e.offsetHeight) || 1;
+  }
+  function tick(){
+    var seen = (window.scrollY || 0) + window.innerHeight;
+    var pct = Math.min(100, (seen / docHeight()) * 100);
+    if (pct > maxDepth) maxDepth = pct;
+    depthEl.textContent = Math.round(maxDepth) + '%';
+    var s = Math.round((Date.now() - start) / 1000);
+    dwellEl.textContent = s < 60 ? s + 's' : Math.floor(s/60) + 'm ' + ('0' + (s%60)).slice(-2) + 's';
+    vpEl.textContent = window.innerWidth + '×' + window.innerHeight;
+  }
+  tick();
+  window.addEventListener('scroll', tick, { passive:true });
+  window.addEventListener('resize', tick);
+  setInterval(tick, 1000);
+})();
+
+// ── Reveal-on-scroll ────────────────────────────────────────────────────
+// Generous on purpose: a fast flick-scroll or a hash-link jump must never
+// leave a plate permanently at opacity:0 because its one intersection frame
+// was missed. threshold:0 + a positive bottom rootMargin fires the moment
+// any pixel would be visible (well before it fully is), and the scroll-driven
+// sweep below is a second, independent safety net that force-reveals anything
+// still pending near the viewport regardless of what the observer did or
+// didn't catch.
+//
+// The sweep's condition must NOT bound how far an element is *above* the
+// viewport, only how far below. IntersectionObserver recomputes intersection
+// at whatever the next check happens to be, not continuously — a single
+// large jump (End key with smooth-scroll disabled, a scrollbar drag, an
+// instant scrollTo, or a fast wheel fling covering more than a screenful
+// between events) can move an element from "not yet visible" straight to
+// "already scrolled past" without either check ever seeing it intersect, so
+// IO never fires for it. An earlier version of this sweep re-checked with
+// `r.top < vh*1.4 && r.bottom > -vh*0.4` — a bounded window on *both* sides
+// — which has exactly the same hole: jump far enough in one scroll event and
+// an element's bottom ends up past -vh*0.4 too, so it fails the sweep's own
+// condition on every subsequent scroll and stays at opacity:0 until the user
+// happens to scroll back through that exact range. Verified: an instant
+// `scrollTo` two-thirds down this page left 47 of 70 .rv elements stuck like
+// that, and they did not recover even after scrolling back through their
+// position. Dropping the lower bound entirely — an element only has to have
+// been reached, never mind how long ago or how far past — closes that hole;
+// the upper bound (elements genuinely still far below the fold) stays, so
+// this remains "reveal near the viewport", not "reveal everything on load".
+(function(){
+  var els = document.querySelectorAll('.rv');
+  function activate(el){
+    if (el.classList.contains('in')) return;
+    el.classList.add('in');
+  }
+  if (!('IntersectionObserver' in window)) { els.forEach(activate); return; }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if (e.isIntersecting) { activate(e.target); io.unobserve(e.target); } });
+  }, { threshold: 0, rootMargin: '0px 0px 200px 0px' });
+  els.forEach(function(el){ io.observe(el); });
+
+  function sweep(){
+    var vh = window.innerHeight;
+    document.querySelectorAll('.rv:not(.in)').forEach(function(el){
+      var r = el.getBoundingClientRect();
+      if (r.top < vh * 1.4) { activate(el); io.unobserve(el); }
+    });
+  }
+  // Belt and braces: the 'scroll' event is throttled to the browser's own
+  // paint cadence, which is not guaranteed to fire for every intermediate
+  // position during a very fast continuous scroll (trackpad flings, or a
+  // long hash-link jump) — and a plate that misses its one chance to be
+  // observed must still end up visible, not permanently at opacity:0. A
+  // short-lived interval is the simplest thing that can't be starved by
+  // event-dispatch timing: it re-checks on a fixed clock regardless of how
+  // scroll events were batched, for the first few seconds after load, which
+  // is the only window where an unrevealed plate is actually reachable.
+  window.addEventListener('scroll', sweep, { passive:true });
+  window.addEventListener('resize', sweep);
+  window.addEventListener('load', sweep);
+  sweep();
+  var sweepInterval = setInterval(sweep, 250);
+  setTimeout(function(){ clearInterval(sweepInterval); sweep(); }, 6000);
+})();
+</script>
 </body>
 </html>

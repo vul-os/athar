@@ -43,6 +43,6 @@ athar.revenue(49.99, 'USD', 'order_123', 'purchase')  // revenue event
 
 ## How beacons are sent
 
-The script uses `navigator.sendBeacon` when available, so the final heatmap flush on page unload actually survives — it falls back to a `fetch` with `keepalive: true` when `sendBeacon` isn't present. Beacons are `POST`ed as a `{type, payload}` JSON envelope to `<host-url>/api/send` (or your configured `collect_path`). A failed send is swallowed silently: analytics must never break the page it's embedded in.
+The script uses `navigator.sendBeacon` when available, so the final heatmap flush on page unload actually survives — it falls back to a `fetch` with `keepalive: true` when `sendBeacon` isn't present. Beacons are `POST`ed as a `{type, payload}` JSON envelope to `<host-url>/api/send` — the tracker always posts to that fixed path, so if you rename `collect_path` on the server (see [Configuration](./configuration.md)), you also need a self-built tracker or a rewrite in front of it; the shipped script does not read `collect_path` back. A failed send is swallowed silently: analytics must never break the page it's embedded in.
 
 The endpoint is credential-free by design — no cookie is set, none is read, `Access-Control-Allow-Origin: *` is safe here specifically because there is nothing to steal with credentials.

@@ -29,7 +29,7 @@ Unknown keys in the file are rejected rather than silently ignored, so a typo in
 | `database` | `ATHAR_DATABASE` | `athar.db` | bare path = SQLite; `postgres://…` = Postgres, same binary |
 | `geoip_path` | `ATHAR_GEOIP_PATH` | *(empty)* | path to a MaxMind-format `.mmdb`; empty disables geo resolution. If set, Athar checks the file is readable at startup and fails fast if it isn't — better than silently collecting geo-less data for a month |
 | `tracker_path` | `ATHAR_TRACKER_PATH` | `/athar.js` | where the tracker script is served. Renaming it is the standard way to survive a blocklist that matches on filename |
-| `collect_path` | `ATHAR_COLLECT_PATH` | `/api/send` | where beacons are POSTed. Must differ from `tracker_path` — both are mounted on the router |
+| `collect_path` | `ATHAR_COLLECT_PATH` | `/api/send` | where beacons are POSTed. Must differ from `tracker_path` — both are mounted on the router. The shipped tracker script always posts to a fixed `/api/send` and does not read this value back — see [Tracker script](./tracker.md#how-beacons-are-sent) — so renaming it also means fronting it with a rewrite or shipping a self-built tracker that posts to the new path |
 | `session_window` | `ATHAR_SESSION_WINDOW` | `30m` | how long a visitor can be idle before their next pageview starts a new *visitor* session (industry-standard 30 minutes) |
 | `session_ttl` | `ATHAR_SESSION_TTL` | `24h` | idle lifetime of a *dashboard login* session — not the same thing as `session_window` |
 | `retention_days` | `ATHAR_RETENTION_DAYS` | `0` | delete visitor sessions (and everything that cascades from them) older than N days. `0` keeps data forever |

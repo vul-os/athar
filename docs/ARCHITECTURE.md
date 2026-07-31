@@ -1,15 +1,15 @@
 # Architecture
 
 Athar is a single static Go binary: a collector, a REST API, and an embedded
-React dashboard, with no external services required. This document covers
-the pieces worth understanding before changing them: the Store seam, the
-ingest path end to end, the embed/build-tag pattern, and why the dashboard
-ships as a PWA rather than a desktop app.
+dashboard — hand-written HTML, CSS and plain ES modules, no framework — with
+no external services required. This document covers the pieces worth
+understanding before changing them: the Store seam, the ingest path end to
+end, the embed/build-tag pattern, and why the dashboard has no build step.
 
 ## Layout
 
 ```
-backend/cmd/athar/        main.go, frontend_embed.go / frontend_dev.go, site_embed.go / site_dev.go
+backend/cmd/athar/        main.go, frontend.go, site_embed.go / site_dev.go
 backend/internal/store/   the Store seam: one database/sql impl + a Dialect (SQLite / Postgres)
 backend/internal/config/  athar.config.json + ATHAR_* env + flags
 backend/internal/ingest/  collector, cookieless identity, user-agent classifier
@@ -17,9 +17,9 @@ backend/internal/geoip/   in-process MaxMind .mmdb reader
 backend/internal/auth/    argon2id, sessions, CSRF, roles
 backend/internal/api/     REST API
 backend/internal/tracker/ athar.js + athar.min.js, embedded and served
-src/                      React dashboard
+backend/internal/webui/   hand-written dashboard (static/, embed.go) — embedded unconditionally
 site/                     static product mini-site
-scripts/                  build-tracker.mjs, build-binary.mjs, check.sh, gen-notices.sh
+scripts/                  build-tracker.mjs, build-binary.mjs, check.sh, gen-notices.sh, jstest/
 ```
 
 ## The Store seam
@@ -107,6 +107,34 @@ entry appended to the `migrations` slice in `migrations.go`, applied inside
 one transaction per step and recorded in an `athar_migrations` ledger table
 so it runs exactly once per database.
 
+### Migration 2: `page_images`, and why the bytes are base64 in `TEXT`
+
+Migration 2 adds `page_images` — one row per (website, URL path, viewport
+width), holding an operator-uploaded picture of that page for the heatmap
+dashboard view to composite its click density field over (see
+`backend/internal/api/pageimages.go` for the feature; `docs/PRIVACY.md` for
+why this doesn't compromise the tracker's no-page-content guarantee). It's a
+direct test of the Store seam's two-engine promise: the column holding the
+actual image bytes (`data_b64`) is `TEXT`, not a binary column, and that's
+deliberate rather than an oversight.
+
+SQLite spells a binary column `BLOB`; Postgres spells it `BYTEA`. There is
+no literal spelling both accept, so a real binary column would need its own
+`Dialect` method — exactly the growth `dialect.go`'s own doc comment warns
+against ("if a `Dialect` ever needs a method like 'rewrite this SELECT', the
+query has drifted out of the portable subset and should be rewritten
+instead of accommodated here"). Base64-encoding the bytes and storing them
+in `TEXT` costs 33% more on disk than a native binary column would, and
+round-trips identically on both engines with no dialect-specific code at
+all — the same trade the two portability rules above already make for
+timestamps and primary keys. Uploads are capped (`maxPageImageBytes`, 8 MiB
+before encoding) and one capture per (website, path, viewport) replaces
+rather than accumulates, so the cost is bounded by how many distinct pages
+and viewports an operator chooses to capture, not by traffic.
+
+The table cascades on website deletion (`ON DELETE CASCADE`), the same as
+every other per-website table.
+
 ## The ingest path
 
 A beacon's trip from `athar.js` to a stored row, in order
@@ -152,51 +180,63 @@ linkable, the change is wrong — see [PRIVACY.md](PRIVACY.md) and
 
 ## The embed / build-tag pattern
 
-Go's `embed` directive can only reach files inside the package directory it
-is declared in, and a plain `go build ./...` should still produce a working
-binary without requiring Node or a built frontend to exist. Athar resolves
-both constraints the same way the sibling Vulos products do, with a build
-tag selecting between two implementations of the same function:
+The dashboard is embedded unconditionally: `backend/internal/webui/embed.go`
+does a plain `//go:embed static` on `backend/internal/webui/static/` (its
+own hand-written HTML/CSS/JS, checked into this repository, not a build
+artifact) and `backend/cmd/athar/frontend.go` hands that straight to
+`http.FileServer`. There is no build tag and no dev/embed split for it — a
+plain `go build ./...` (no Node, no npm) already produces a binary with a
+fully working dashboard.
 
-- **`frontend_dev.go`** (`//go:build !embed_frontend`) — the default build.
-  `newFrontendHandler()` serves the dashboard from a `dist/` directory found
-  by walking up from the working directory, or prints a friendly "run
-  `npm run dev`" page if none exists. This is what `go run ./backend/cmd/athar`
-  and a plain `go build ./...` use.
-- **`frontend_embed.go`** (`//go:build embed_frontend`) — `//go:embed dist`
-  compiles a `dist/` directory that must exist *inside*
-  `backend/cmd/athar/` at build time into the binary via `embed.FS`.
+Only the marketing mini-site still needs the build-tag trick, because `site/`
+is a standalone static tree outside the `backend/internal/webui` package
+directory, and Go's `embed` directive can only reach files inside the
+package directory it's declared in:
 
-`scripts/build-binary.mjs` (invoked by `npm run build:all`) does the staging
-this requires: it copies the repo-root `dist/` (the Vite build output) and
-`site/` into `backend/cmd/athar/dist` and `backend/cmd/athar/site`, compiles
-with `-tags embed_frontend`, then removes the staged copies — so the
-embedded build tag only ever sees the frontend at compile time, and the
-working tree has no leftover duplicate between builds. `site_embed.go` /
-`site_dev.go` follow the identical pattern for the marketing mini-site
-(served only when `serve_landing` is set).
+- **`site_dev.go`** (`//go:build !embed_site`) — the default build.
+  `newSiteHandler()` serves `site/` from disk, found by walking up from the
+  working directory, or mounts nothing at `/site/` if it isn't found. This
+  is what `go run ./backend/cmd/athar` and a plain `go build ./...` use.
+- **`site_embed.go`** (`//go:build embed_site`) — `//go:embed site` compiles
+  a `site/` directory that must exist *inside* `backend/cmd/athar/` at build
+  time into the binary via `embed.FS`.
+
+`scripts/build-binary.mjs` (invoked by `npm run build`) does the staging
+this requires: it copies the repo-root `site/` into `backend/cmd/athar/site`,
+compiles with `-tags embed_site`, then removes the staged copy — so the
+embedded build tag only ever sees the site at compile time, and the working
+tree has no leftover duplicate between builds. This build tag was renamed
+from `embed_frontend` to `embed_site` when the dashboard stopped being
+conditional — only the marketing site is optional now.
 
 The tracker script (`backend/internal/tracker/athar.min.js`) is committed
 outright rather than built as part of this pipeline or gitignored — see
 `backend/internal/tracker/tracker.go`'s package doc — specifically so that a
-Go toolchain alone, with no Node involved, produces a binary that serves a
-working (if not freshly rebuilt) tracker. `node scripts/build-tracker.mjs --check`
-in CI is what keeps the committed file from silently drifting out of sync
+Go toolchain alone, with no Node involved, produces a binary that serves
+both a working (if not freshly rebuilt) tracker and a fully working
+dashboard: `go build -o athar ./backend/cmd/athar` alone is a complete,
+runnable self-host build. `node scripts/build-tracker.mjs --check` in CI is
+what keeps the committed tracker file from silently drifting out of sync
 with `athar.js`.
 
-## Why a PWA, not a desktop app
+## Why the dashboard has no build step
 
-The collector is a server process: it has to keep running to receive
-beacons from visitors' browsers at any hour, on any device, for as long as
-the tracked site is up. A desktop-app packaging of the dashboard would
-invite exactly the wrong mental model — close the app, and it looks like
-you've closed Athar, when in fact the thing that actually needs to stay
-running is wherever you deployed the binary, not wherever you're viewing
-the dashboard from.
+The dashboard used to be a React 19 + Vite + Tailwind single-page app,
+embedded as a built `dist/` bundle behind the `embed_frontend` tag described
+above. It is now hand-written HTML, CSS and plain ES modules
+(`backend/internal/webui/static/`: `index.html`, `ui.css`, and modules like
+`app.js`, `dom.js`, `api.js`, `theme.js`, `format.js`, `countries.js`,
+`chart.js` for hand-built SVG charts, and `heatcanvas.js`/`heatmap.js` for
+the heatmap canvas renderer) served directly via `go:embed`. There is no
+compiler between the source you edit and the bytes the browser receives, so
+"edit a file under `static/`, restart `go run ./backend/cmd/athar`" is the
+entire dev loop — no separate frontend process, no `dist/` that can drift
+out of sync with a source tree the way it used to.
 
-A PWA is the better fit for what the dashboard actually is: a client for a
-service that runs somewhere else. Installing it (`index.html`'s
-`manifest.webmanifest` link) gets you an app-like icon and window on
-Android, iOS, Windows, macOS and Linux from the one Vite build — no
-per-platform packaging — while the collector keeps doing its job
-independently of whether anyone has the dashboard open at all.
+This also removed the dashboard's PWA: `manifest.webmanifest`, the service
+worker, and the app icons existed to make an installable app out of what is
+fundamentally a thin client for a server process that has to keep running
+regardless of whether anyone has the dashboard open. Installability wasn't
+earning its complexity, so the dashboard is now a plain web page — open it
+in a browser tab from wherever it's reachable, on any device, no
+per-platform packaging and nothing to install.

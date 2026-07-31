@@ -1,7 +1,7 @@
 # Athar Roadmap
 
 Athar is a self-hosted web analytics tool maintained by [Vulos](https://vulos.org):
-a single Go binary (embedded React dashboard, no cgo) that collects
+a single Go binary (dashboard embedded via `go:embed`, no cgo) that collects
 cookieless, no-PII analytics with heatmaps and basic ecommerce tooling, backed
 by SQLite or Postgres behind one interface (the "Store seam" — see
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)).
@@ -46,9 +46,8 @@ Verified end-to-end (collector → store → dashboard) before release:
   throughout.
 - **The heatmap dashboard view** — click, scroll-depth and attention modes,
   with a page picker driven by the top-pages metric. The click map is drawn
-  as a density field on a proportional frame with the clicked elements listed
-  beside it as CSS selectors; there is deliberately no page screenshot under
-  it (see Near-term below, and the Non-goals).
+  as a density field on a proportional frame, with the clicked elements
+  listed beside it as CSS selectors.
 - **Public share links** — an unguessable id serves read-only summary stats
   for one website with no login; re-enabling sharing mints a fresh id, so
   disabling it is a real revocation. **Server-side and API-only**: mint and
@@ -57,10 +56,44 @@ Verified end-to-end (collector → store → dashboard) before release:
 - **Retention** — deletes whole visitor sessions (cascading to their events,
   heatmap samples and revenue rows) past a configurable age, so no
   orphaned rows skew a later bounce-rate calculation.
-- **Multiple websites per instance**, a REST API, dark-mode dashboard
-  installable as a **PWA**.
+- **Multiple websites per instance**, a REST API, dark-mode dashboard.
 - **The Store seam** — SQLite (zero setup, self-host default) or Postgres
   (`postgres://` DSN), same binary, chosen by the `database` config value.
+
+---
+
+## On main, unreleased
+
+Built, tested, and sitting on `main` — but not in the 0.1.0 you can
+download today. Lands in the next release.
+
+- **Heatmap-over-page-capture underlay.** The click heatmap can now draw its
+  density field over a real picture of the page, not only the wireframe. The
+  picture is **operator-supplied upload, not automatic capture**: an editor
+  takes a full-page screenshot of their own page and uploads it through the
+  dashboard (`PUT /api/websites/{id}/page-image?path=…&viewport=…`), one
+  image per (site, path, viewport width), replaced rather than accumulated.
+  Athar's tracker still captures nothing about page content — no DOM
+  snapshot, no HTML, no text, no form values — and the server never fetches
+  the tracked site; a capture exists only because a human produced and
+  uploaded it. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the
+  `page_images` table and
+  [backend/internal/api/pageimages.go](backend/internal/api/pageimages.go)
+  for why upload beat both a tracker-side DOM snapshot and server-side
+  rasterisation (the two alternatives, and why each was rejected).
+  **This is not the session-replay item in Non-goals below** — see that
+  entry for the distinction.
+- **Honest degradation stays the default.** With no capture for the selected
+  page and viewport, the heatmap shows the wireframe schematic, badged
+  `SCHEMATIC` and captioned "not a picture of the page" — never another
+  page's or another viewport's image. "All viewports" always shows the
+  schematic: averaging a 390px and a 1440px layout onto one picture would be
+  exactly the authoritative-looking lie this feature exists to avoid.
+- **Capture management lives in the dashboard**, gated to editor/owner
+  access with CSRF enforced like every other write, and states the privacy
+  consequence — that anything visible in the capture becomes visible to
+  every viewer of the dashboard — at the point of upload, not in a
+  disclosure triangle.
 
 ---
 
@@ -68,12 +101,23 @@ Verified end-to-end (collector → store → dashboard) before release:
 
 Genuinely unfinished, prioritised roughly by how often it's asked for:
 
-- **Heatmap-over-screenshot underlay** — the heatmap view itself shipped in
-  0.1.0 (above): it renders the density field, the scroll drop-off curve and
-  the attention bands from `/api/websites/{id}/heatmap`. What is *not* built
-  is drawing that field over a picture of the page, because Athar's tracker
-  captures no DOM snapshot to draw one from. That needs a separate, opt-in
-  capture path — see Later/exploratory and Non-goals.
+- **PWA reinstatement — installability, deliberately without the offline
+  machinery.** v0.1.0 shipped an installable PWA (`manifest.webmanifest`, a
+  service worker, app icons); it was removed in the rewrite from a React
+  dashboard to hand-written HTML/CSS/JS embedded in the binary (see
+  [CHANGELOG.md](CHANGELOG.md)), because the service worker's offline cache
+  and its update/staleness handling was real, ongoing complexity in a
+  dashboard that is otherwise build-free and has no compiled bundle to go
+  stale against. That removal bundled two different jobs together, which is
+  what made it look cheaper to drop than it is to bring back:
+  **installability** — a web manifest plus a couple of app icons, so the
+  dashboard gets a home-screen icon and its own window — is nearly free.
+  **Offline support** — a service worker, a cache to invalidate, an update
+  cycle to reason about — is materially bigger, and it isn't implied by the
+  first. It's also of limited value here regardless of cost: the dashboard's
+  entire purpose is showing live server state, and an offline copy of that
+  is a stale copy. The plan is to bring back the manifest and icons; the
+  service worker stays out unless a concrete case for it shows up.
 - **Website settings UI** — enabling/revoking a share link
   (`POST /api/websites/{id}/share`) and deleting a website
   (`DELETE /api/websites/{id}`) are enforced and tested server-side, but the
@@ -95,7 +139,7 @@ Genuinely unfinished, prioritised roughly by how often it's asked for:
 - **Account & user administration UI** — changing your own password
   (`POST /api/me/password`) and the admin user CRUD (`GET`/`POST /api/users`,
   `DELETE /api/users/{id}`) are implemented, authenticated and tested, but
-  nothing in the dashboard calls them. The React app today is: first-run
+  nothing in the dashboard calls them. The dashboard today is: first-run
   setup, login, the reporting overview, the heatmap views, and adding a
   website.
 - **Data export / import.**
@@ -130,7 +174,13 @@ Genuinely unfinished, prioritised roughly by how often it's asked for:
 - **Session replay as currently scoped for heatmaps.** The click/scroll/
   attention sampler is deliberately not a DOM recorder; conflating the two
   would quietly turn a privacy-first tool into one that captures page
-  content.
+  content. **This is not the same thing as the page-capture upload above.**
+  An operator uploading a picture of their own page is a manual, occasional,
+  human-produced action with no tracker involvement at all; session replay
+  would mean the tracker itself recording a visitor's DOM automatically, on
+  every session. The upload feature adds no tracker-side capture of any
+  kind — it is still true that the tracker records only coordinates and a
+  selector, never DOM content.
 - **A hosted, multi-tenant SaaS as the primary product.** Athar's whole
   premise is that your visitors' data stays on infrastructure you control;
   the Postgres option exists for *your own* cloud deployment via the Store
@@ -143,8 +193,9 @@ Genuinely unfinished, prioritised roughly by how often it's asked for:
 
 ## Notes for contributors
 
-- Keep `make check` green on every change (`go build`, `go vet`, `go test`,
-  the tracker up-to-date check, `npm run lint`, `npm run build`).
+- Keep `make check` green on every change (`gofmt`, `go build`, `go vet`,
+  `go test`, the tracker up-to-date check, and the dashboard's
+  `node --test scripts/jstest/*.test.mjs` suite).
 - Anything touching `backend/internal/ingest` or `backend/internal/auth` is
   security-sensitive by definition — see [SECURITY.md](SECURITY.md) and
   [CONTRIBUTING.md](CONTRIBUTING.md#scope-what-we-say-yes-and-no-to) for the
