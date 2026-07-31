@@ -1,163 +1,132 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Athar docs</title>
-<meta name="description" content="Athar documentation">
-  <link rel="canonical" href="https://vulos.org/projects/athar/docs.html">
-  <meta name="color-scheme" content="dark light">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Athar">
-  <meta property="og:title" content="Athar docs">
-  <meta property="og:description" content="Athar documentation">
-  <meta property="og:url" content="https://vulos.org/projects/athar/docs.html">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Athar docs">
-  <meta name="twitter:description" content="Athar documentation">
-  <meta property="og:image" content="https://vulos.org/projects/athar/assets/og-card.png">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Athar docs — Athar documentation">
-  <meta name="twitter:image" content="https://vulos.org/projects/athar/assets/og-card.png">
+<title>Athar docs — self-hosted analytics, installed and configured</title>
+<meta name="description" content="Athar documentation: getting started, install, self-hosting, the tracker script, heatmaps, ecommerce, privacy, configuration, the REST API, architecture, roadmap and changelog.">
+<meta name="theme-color" content="#0B0B0D">
+<meta name="color-scheme" content="dark light">
+<link rel="canonical" href="https://vulos.org/projects/athar/docs.html">
 <link rel="icon" href="./assets/brand/favicon.svg" type="image/svg+xml">
-<style>*,*::before,*::after{box-sizing:border-box}
-:root{
-  --bg:#09090B; --bg-soft:#0E0E10; --panel:#131316; --panel-2:#18181B;
-  --border:rgba(255,255,255,.08); --border-2:rgba(255,255,255,.13);
-  --text:#FAFAFA; --muted:#A1A1AA; --faint:#71717A;
-  --radius:16px; --max:1120px;
-  --mono:ui-monospace,SFMono-Regular,"SF Mono","Geist Mono",Menlo,Consolas,monospace;
-  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
-}
-html{scroll-behavior:smooth}
-body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased;font-size:16px}
-body::before{content:"";position:fixed;inset:0;z-index:-1;background:
-  radial-gradient(1100px 600px at 80% -10%, color-mix(in srgb,var(--accent) 10%, transparent), transparent 60%),
-  radial-gradient(900px 500px at -10% 10%, color-mix(in srgb,var(--accent-2) 8%, transparent), transparent 55%),
-  var(--bg);}
-a{color:inherit;text-decoration:none}
-img{max-width:100%;display:block}
-.wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
-.accent{color:var(--accent)}
 
-/* Header */
-.site-header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:color-mix(in srgb,var(--bg) 72%, transparent);border-bottom:1px solid var(--border)}
-.nav{display:flex;align-items:center;gap:18px;height:64px}
-.brand{display:flex;align-items:center;gap:11px;font-weight:600;font-size:18px;letter-spacing:-.03em}
-.brand .tile{width:34px;height:34px;border-radius:9px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.12) inset, 0 4px 14px rgba(0,0,0,.35);background:#0E0E10;display:grid;place-items:center}
-.brand .tile svg{width:100%;height:100%;display:block}
-.nav-spacer{flex:1}
-.nav-links{display:flex;align-items:center;gap:22px}
-.nav-links a{color:var(--muted);font-size:14.5px;font-weight:500;transition:color .15s}
-.nav-links a:hover{color:var(--text)}
-.vulos-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--border-2);border-radius:999px;font-size:13px;color:var(--muted);transition:border-color .15s,color .15s}
-.vulos-badge:hover{border-color:var(--accent);color:var(--text)}
-.vulos-badge img{width:16px;height:16px;border-radius:4px}
-@media(max-width:760px){.nav-links{display:none}}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Athar">
+<meta property="og:title" content="Athar docs — self-hosted analytics, installed and configured">
+<meta property="og:description" content="Getting started, self-hosting, the tracker script, heatmaps, ecommerce, privacy, configuration, the REST API, architecture, roadmap and changelog.">
+<meta property="og:url" content="https://vulos.org/projects/athar/docs.html">
+<meta property="og:image" content="https://vulos.org/projects/athar/assets/og-card.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Athar — self-hosted, cookieless web analytics with heatmaps, in one Go binary.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Athar docs — self-hosted analytics, installed and configured">
+<meta name="twitter:description" content="Getting started, self-hosting, the tracker script, heatmaps, ecommerce, privacy, configuration, the REST API, architecture, roadmap and changelog.">
+<meta name="twitter:image" content="https://vulos.org/projects/athar/assets/og-card.png">
 
-/* Footer */
-.site-footer{border-top:1px solid var(--border);margin-top:40px;padding:40px 0}
-.foot{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
-.foot .left{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px}
-.foot .left img{width:20px;height:20px;border-radius:5px}
-.foot .links{display:flex;gap:20px;flex-wrap:wrap}
-.foot .links a{color:var(--muted);font-size:14px}
-.foot .links a:hover{color:var(--text)}
+<!-- Theme resolved before first paint — no flash, and shared with the
+     landing via the same localStorage key. -->
+<script>
+(function(){try{var s=localStorage.getItem('athar-site-theme');
+document.documentElement.setAttribute('data-theme',s==='light'||s==='dark'?s:(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'));
+}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();
+</script>
 
-/* Docs viewer */
-.docs-shell{display:grid;grid-template-columns:248px 1fr;gap:36px;align-items:start;padding:34px 0 70px}
-@media(max-width:860px){.docs-shell{grid-template-columns:1fr}}
-.docs-nav{position:sticky;top:84px;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);padding:14px}
-.docs-nav .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);padding:6px 10px}
-.docs-nav a{display:block;padding:8px 11px;border-radius:9px;color:var(--muted);font-size:14.5px;font-weight:500;transition:.15s}
-.docs-nav a:hover{background:rgba(255,255,255,.04);color:var(--text)}
-.docs-nav a.active{background:color-mix(in srgb,var(--accent) 14%, transparent);color:var(--text)}
-@media(max-width:860px){.docs-nav{position:static}}
-.docs-main{min-width:0}
-.markdown{font-size:16px}
-.markdown>*:first-child{margin-top:0}
-.markdown h1{font-size:34px;letter-spacing:-.03em;margin:.2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.3em}
-.markdown h2{font-size:25px;letter-spacing:-.02em;margin:1.6em 0 .6em;border-bottom:1px solid var(--border);padding-bottom:.25em}
-.markdown h3{font-size:19px;margin:1.4em 0 .5em}
-.markdown h4{font-size:16px;margin:1.3em 0 .4em;color:var(--text)}
-.markdown p,.markdown li{color:#D4D4D8}
-.markdown a{color:var(--accent);text-decoration:none}
-.markdown a:hover{text-decoration:underline}
-.markdown code{font-family:var(--mono);font-size:.88em;background:rgba(255,255,255,.07);padding:2px 6px;border-radius:6px}
-.markdown pre{background:#0C0C0E;border:1px solid var(--border-2);border-radius:12px;padding:16px 18px;overflow:auto}
-.markdown pre code{background:none;padding:0;font-size:13.5px;line-height:1.7;color:#D4D4D8}
-.markdown blockquote{margin:1em 0;padding:.4em 1em;border-left:3px solid var(--accent);background:rgba(255,255,255,.03);color:var(--muted);border-radius:0 8px 8px 0}
-.markdown table{border-collapse:collapse;width:100%;margin:1.2em 0;font-size:14.5px;display:block;overflow:auto}
-.markdown th,.markdown td{border:1px solid var(--border-2);padding:9px 12px;text-align:left}
-.markdown th{background:var(--panel);font-weight:600}
-.markdown img{border-radius:10px;margin:1em 0;border:1px solid var(--border)}
-.markdown hr{border:none;border-top:1px solid var(--border);margin:2em 0}
-.docs-title{font-size:13px;color:var(--faint);margin-bottom:6px}
-.docs-error{color:#FCA5A5;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);padding:14px 16px;border-radius:10px}
-</style>
-<style>:root{--accent:#e9a23b;--accent-2:#c77b2e}</style>
+<link rel="stylesheet" href="./assets/style.css">
 <script src="./assets/vendor/marked.umd.js"></script>
+<script src="./assets/vendor/highlight.min.js"></script>
 </head>
 <body>
-<header class="site-header"><div class="wrap nav">
-    <a class="brand" href="./index.html"><span class="tile">
-      <img src="./assets/brand/mark.svg" alt="" width="34" height="34">
-    </span>Athar</a>
-    <div class="nav-spacer"></div>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="./index.html" aria-label="Athar home">
+      <span class="tile"><img src="./assets/brand/mark.svg" alt="" width="30" height="30"></span>
+      Athar
+    </a>
     <nav class="nav-links">
       <a href="./index.html#features">Features</a>
       <a href="./index.html#privacy">Privacy</a>
-      <a href="./docs.html">Docs</a>
-      <a href="https://github.com/vul-os/athar" target="_blank" rel="noopener">GitHub</a>
+      <a href="./index.html#status">Status</a>
+      <a class="active" href="./docs.html">Docs</a>
     </nav>
-    <a class="vulos-badge" href="https://vulos.org" target="_blank" rel="noopener" title="Part of Vulos">
-      <img src="./assets/vulos-logo.png" alt="Vulos">Part of Vulos
-    </a>
-  </div></header>
+    <div class="nav-act">
+      <a class="ghlink" href="https://github.com/vul-os/athar" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .3a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58l-.01-2.04c-3.34.72-4.04-1.61-4.04-1.61-.55-1.38-1.33-1.75-1.33-1.75-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.4 11.4 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.63-5.48 5.92.43.37.81 1.1.81 2.22l-.01 3.29c0 .32.21.7.82.58A12 12 0 0 0 12 .3Z"/></svg>
+        <span>GitHub</span>
+      </a>
+      <button class="iconbtn" id="themeBtn" type="button" aria-label="Switch theme" title="Switch theme">
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="status-strip">
+  <div class="wrap"><b>v0.1.0 — early.</b> The collector, storage, auth and reporting paths are implemented and exercised end to end; a few screens are API-only until the dashboard catches up. <a href="./index.html#status">See what's shipped →</a></div>
+</div>
+
 <div class="wrap docs-shell">
-  <aside class="docs-nav">
-    <div class="label">Athar docs</div>
-        <a data-slug="getting-started" href="#getting-started">Getting started</a>
-        <a data-slug="install" href="#install">Install</a>
-        <a data-slug="tracker" href="#tracker">Tracker script</a>
-        <a data-slug="heatmaps" href="#heatmaps">Heatmaps</a>
-        <a data-slug="ecommerce" href="#ecommerce">Ecommerce</a>
-        <a data-slug="privacy" href="#privacy">Privacy</a>
-        <a data-slug="configuration" href="#configuration">Configuration</a>
-        <a data-slug="api" href="#api">API</a>
-        <a data-slug="self-hosting" href="#self-hosting">Self-hosting</a>
-        <a data-slug="architecture" href="#architecture">Architecture</a>
-        <a data-slug="roadmap" href="#roadmap">Roadmap</a>
-        <a data-slug="changelog" href="#changelog">Changelog</a>
+  <aside class="docs-nav" aria-label="Documentation chapters">
+    <div class="grp">Start</div>
+    <a data-slug="getting-started" href="#getting-started"><span class="dot"></span>Getting started</a>
+    <a data-slug="install" href="#install"><span class="dot"></span>Install</a>
+    <a data-slug="self-hosting" href="#self-hosting"><span class="dot"></span>Self-hosting</a>
+    <div class="grp">Product</div>
+    <a data-slug="tracker" href="#tracker"><span class="dot"></span>Tracker script</a>
+    <a data-slug="heatmaps" href="#heatmaps"><span class="dot"></span>Heatmaps</a>
+    <a data-slug="ecommerce" href="#ecommerce"><span class="dot"></span>Ecommerce</a>
+    <a data-slug="privacy" href="#privacy"><span class="dot"></span>Privacy</a>
+    <div class="grp">Reference</div>
+    <a data-slug="configuration" href="#configuration"><span class="dot"></span>Configuration</a>
+    <a data-slug="api" href="#api"><span class="dot"></span>API</a>
+    <a data-slug="architecture" href="#architecture"><span class="dot"></span>Architecture</a>
+    <div class="grp">Project</div>
+    <a data-slug="roadmap" href="#roadmap"><span class="dot"></span>Roadmap</a>
+    <a data-slug="changelog" href="#changelog"><span class="dot"></span>Changelog</a>
   </aside>
-  <main class="docs-main">
-    <div class="docs-title" id="crumb"></div>
+  <main class="docs-main" id="main">
+    <div class="docs-crumb"><a href="./index.html">Athar</a><span>/</span><span id="crumb">Docs</span></div>
     <article class="markdown" id="content">Loading…</article>
+    <nav class="docs-pager" id="pager" aria-label="Chapter navigation"></nav>
   </main>
 </div>
+
 <footer class="site-footer"><div class="wrap foot">
-    <div class="left"><img src="./assets/vulos-logo.png" alt="Vulos"> <span>Part of <a href="https://vulos.org" target="_blank" rel="noopener" style="color:var(--text)">Vulos</a> — open, self-hostable apps. Standalone by design.</span></div>
-    <div class="links">
-      <a href="./docs.html">Docs</a>
-      <a href="https://github.com/vul-os/athar" target="_blank" rel="noopener">GitHub</a>
-      <a href="./LICENSE.txt">License</a>
-      <a href="https://vulos.org" target="_blank" rel="noopener">vulos.org</a>
-    </div>
-  </div></footer>
+  <div class="left"><img src="./assets/vulos-logo.png" alt="Vulos"> <span>Part of <a href="https://vulos.org" target="_blank" rel="noopener" style="color:var(--t1)">Vulos</a> — open, self-hostable apps.</span></div>
+  <div class="links">
+    <a href="./index.html">Landing</a>
+    <a href="https://github.com/vul-os/athar" target="_blank" rel="noopener">GitHub</a>
+    <a href="./LICENSE.txt">Licence</a>
+    <a href="https://vulos.org" target="_blank" rel="noopener">vulos.org</a>
+  </div>
+</div></footer>
+
 <script>
-// The site is served from the repo root; docs render straight from the repo's own markdown.
+// ── Theme toggle, shared key with the landing ────────────────────────────
+(function(){
+  var KEY='athar-site-theme', root=document.documentElement, btn=document.getElementById('themeBtn');
+  btn.addEventListener('click', function(){
+    var next = root.getAttribute('data-theme')==='dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try{ localStorage.setItem(KEY, next); }catch(e){}
+  });
+})();
+
+// ── Docs content ──────────────────────────────────────────────────────────
 const DOCS = [
   {"slug":"getting-started","title":"Getting started","path":"./docs/getting-started.md"},
   {"slug":"install","title":"Install","path":"./docs/install.md"},
+  {"slug":"self-hosting","title":"Self-hosting","path":"./docs/self-hosting.md"},
   {"slug":"tracker","title":"Tracker script","path":"./docs/tracker.md"},
   {"slug":"heatmaps","title":"Heatmaps","path":"./docs/heatmaps.md"},
   {"slug":"ecommerce","title":"Ecommerce","path":"./docs/ecommerce.md"},
   {"slug":"privacy","title":"Privacy","path":"./docs/privacy.md"},
   {"slug":"configuration","title":"Configuration","path":"./docs/configuration.md"},
   {"slug":"api","title":"API","path":"./docs/api.md"},
-  {"slug":"self-hosting","title":"Self-hosting","path":"./docs/self-hosting.md"},
   {"slug":"architecture","title":"Architecture","path":"./docs/architecture.md"},
   {"slug":"roadmap","title":"Roadmap","path":"./docs/roadmap.md"},
   {"slug":"changelog","title":"Changelog","path":"./docs/changelog.md"}
@@ -166,35 +135,117 @@ const bySlug = Object.fromEntries(DOCS.map(d=>[d.slug,d]));
 const byFile = Object.fromEntries(DOCS.map(d=>[d.path.split('/').pop().toLowerCase(),d]));
 const content = document.getElementById('content');
 const crumb = document.getElementById('crumb');
+const pager = document.getElementById('pager');
 
 if (window.marked && marked.setOptions) marked.setOptions({ gfm:true, breaks:false });
 
+const copySvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+
+function decorateCode(){
+  // Every ```lang fence becomes a chrome bar (language label + copy button)
+  // around the <pre>, and gets highlighted with the vendored hljs build.
+  content.querySelectorAll('pre > code').forEach(function(code){
+    const pre = code.parentElement;
+    const langMatch = (code.className||'').match(/language-([\w-]+)/);
+    let lang = langMatch ? langMatch[1] : '';
+    if (window.hljs) {
+      try {
+        const known = ['bash','sh','shell','go','sql','json','yaml','yml','html','javascript','js','nginx','ini','toml'];
+        if (lang && known.includes(lang)) {
+          const res = hljs.highlight(code.textContent, { language: lang });
+          code.innerHTML = res.value;
+        } else if (!lang) {
+          const res = hljs.highlightAuto(code.textContent, known);
+          code.innerHTML = res.value;
+          lang = res.language || '';
+        }
+        code.classList.add('hljs');
+      } catch(e){ /* leave as plain text */ }
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'codeblock';
+    const bar = document.createElement('div');
+    bar.className = 'cb-bar';
+    const label = document.createElement('span');
+    label.className = 'cb-lang';
+    label.textContent = lang || 'text';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cb-copy';
+    btn.innerHTML = copySvg + '<span>Copy</span>';
+    btn.addEventListener('click', function(){
+      navigator.clipboard.writeText(code.textContent).then(function(){
+        btn.classList.add('copied');
+        btn.innerHTML = checkSvg + '<span>Copied</span>';
+        setTimeout(function(){ btn.classList.remove('copied'); btn.innerHTML = copySvg + '<span>Copy</span>'; }, 1800);
+      });
+    });
+    bar.appendChild(label);
+    bar.appendChild(btn);
+    pre.parentElement.insertBefore(wrap, pre);
+    wrap.appendChild(bar);
+    wrap.appendChild(pre);
+  });
+}
+
+function wrapTables(){
+  content.querySelectorAll('table').forEach(function(t){
+    const w = document.createElement('div');
+    w.className = 'tblwrap';
+    t.parentElement.insertBefore(w, t);
+    w.appendChild(t);
+  });
+}
+
 function setActive(slug){
   document.querySelectorAll('.docs-nav a').forEach(a=>a.classList.toggle('active', a.dataset.slug===slug));
+}
+
+function renderPager(slug){
+  const i = DOCS.findIndex(d=>d.slug===slug);
+  const prev = DOCS[i-1], next = DOCS[i+1];
+  pager.innerHTML = '';
+  if (prev) {
+    const a = document.createElement('a');
+    a.href = '#'+prev.slug;
+    a.innerHTML = '<span class="to">← Previous</span><span class="nm">'+prev.title+'</span>';
+    pager.appendChild(a);
+  }
+  if (next) {
+    const a = document.createElement('a');
+    a.href = '#'+next.slug;
+    a.className = 'next';
+    a.innerHTML = '<span class="to">Next →</span><span class="nm">'+next.title+'</span>';
+    pager.appendChild(a);
+  }
 }
 
 async function load(slug){
   const doc = bySlug[slug] || DOCS[0];
   setActive(doc.slug);
   crumb.textContent = doc.title;
+  document.title = 'Athar docs — ' + doc.title;
   content.innerHTML = 'Loading…';
   try {
     const res = await fetch(doc.path, {cache:'no-cache'});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const md = await res.text();
     content.innerHTML = marked.parse(md);
-    // Cross-doc links (e.g. api.md, ../roadmap.md#phase-4) become sidebar navigation.
     content.querySelectorAll('a[href]').forEach(a=>{
       const h=a.getAttribute('href')||'';
-      if(/^(https?:|#|mailto:)/i.test(h)) return;
+      if(/^(https?:|#|mailto:)/i.test(h)) { if (/^https?:/i.test(h)) { a.target='_blank'; a.rel='noopener'; } return; }
       const m=h.match(/([^\/]+\.md)(#.*)?$/i);
       const target = m && byFile[m[1].toLowerCase()];
-      if(target) a.setAttribute('href','#'+target.slug);
+      if(target) a.setAttribute('href','#'+target.slug+(m[2]||''));
     });
-    content.querySelectorAll('a[href^="http"]').forEach(a=>{a.target='_blank';a.rel='noopener';});
+    decorateCode();
+    wrapTables();
+    renderPager(doc.slug);
     window.scrollTo({top:0});
   } catch(err){
     content.innerHTML = '<div class="docs-error">Could not load <code>'+doc.path.split('/').pop()+'</code> — '+err.message+'</div>';
+    pager.innerHTML = '';
   }
 }
 

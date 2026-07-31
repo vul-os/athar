@@ -4,7 +4,7 @@ Athar is a self-hosted web analytics tool with heatmaps and ecommerce tooling. I
 
 ## Run it
 
-```
+```bash
 git clone https://github.com/vul-os/athar.git
 cd athar
 npm install && npm run build:all

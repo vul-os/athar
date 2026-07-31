@@ -6,7 +6,7 @@ Athar builds to a single static Go binary with the React dashboard embedded via 
 
 ## Request paths
 
-```
+```text
 Visitor's browser
    │  GET  /athar.js            (tracker script; ?source=1 for the readable copy)
    │  POST /api/send            (beacons — pageviews, custom events, heatmap batches)

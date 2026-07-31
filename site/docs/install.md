@@ -9,7 +9,7 @@ Athar has one supported install path today: build the static binary from source.
 
 ## Build
 
-```
+```bash
 git clone https://github.com/vul-os/athar.git
 cd athar
 npm install
@@ -26,7 +26,7 @@ The result is a single executable. Copy it wherever you like; it needs no accomp
 
 ## Run
 
-```
+```bash
 ./athar
 ```
 
@@ -34,7 +34,7 @@ With no arguments this binds `127.0.0.1:3100` and stores to `./athar.db` in the 
 
 Check what you built:
 
-```
+```bash
 ./athar -version
 ```
 
@@ -55,7 +55,7 @@ Flags always win over `athar.config.json` and `ATHAR_*` environment variables â€
 
 The same binary runs on Postgres; nothing is rebuilt or reconfigured beyond the DSN:
 
-```
+```bash
 ./athar -db "postgres://user:pass@host:5432/athar?sslmode=require"
 ```
 

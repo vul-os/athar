@@ -10,7 +10,7 @@ The tracker sets no cookie and reads no cookie. It writes nothing to `localStora
 
 Athar still needs to tell "the same visitor, twice" from "two different visitors" — that's what unique-visitor counts and bounce rate are computed from. It does this with a hash computed at request time, never stored client-side:
 
-```
+```text
 salt    = HMAC-SHA256(instance_secret, "YYYY-MM-DD")   # UTC day, recomputed at midnight
 visitor = HMAC-SHA256(salt, website_id || ip || user_agent)
 ```

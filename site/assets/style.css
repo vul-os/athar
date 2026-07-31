@@ -1,0 +1,276 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   Athar docs — the chrome for site/docs.html.
+
+   The landing (site/index.html) is self-contained on purpose — its CSS is
+   inline, so it stays one file to move. This stylesheet carries only what
+   docs.html needs: the shared header/footer chrome, the chapter rail, the
+   markdown body, and the code block.
+
+   The tokens below are the LANDING's tokens, name for name and value for
+   value, including its light theme, so a reader who sets the light theme on
+   the landing and clicks "Docs" doesn't land on a differently-lit page. Both
+   pages read `athar-site-theme` from localStorage before first paint and
+   resolve to the same surface.
+
+   COLOUR — one accent, per brand/logo.svg: AMBER #E9A23B, the ring mark's
+   colour on an INK ground. Everything else is neutral.
+
+   MEASURED, not guessed:
+     amber on the dark ground (#0B0B0D)  9.08:1 — safe as text and as a fill.
+     amber on white/paper                ~2.1:1 — a fine FILL, an unusable
+       INK. So amber-coloured TEXT (links, the active rail item, the eyebrow)
+       resolves to --amber-ink: #9A5710 in the light theme (5.4:1 on the
+       paper ground), and to --amber (#E9A23B) itself in the dark theme.
+     --t3 (the faintest text colour) is #807D86 on dark (4.87:1) and #726D64
+       on light (4.93:1) — both were nudged up from a first pass that
+       measured under 4.5:1 and is why this file states the number instead of
+       eyeballing it.
+
+   CODE — a fixed palette shared across the Vulos suite, independent of page
+   theme (the code surface stays dark in both): see the block below `.hljs`.
+   Every one of its colours clears 4.5:1 against #0C1116 except the comment
+   tone (#6B7C93, 4.45:1) — a hair under the floor, kept as specified because
+   the palette is shared identically across four sibling projects and
+   comments are supporting text, not the content being read for meaning.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+*,*::before,*::after{box-sizing:border-box}
+
+:root{
+  /* Dark theme = near-black ground, warmed a touch to sit near the mark's
+     own #0E0E11 rather than a cold, bluish black. */
+  --bg:#0B0B0D; --bg-2:#111114; --panel:#16161A; --panel-2:#1C1C21; --sunken:#08080A;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.16); --hair:rgba(255,255,255,.06);
+  --t1:#F5F3EF; --t2:#A6A3AC; --t3:#807D86;
+  --amber:#E9A23B; --amber-ink:#E9A23B;
+  --amber-wash:rgba(233,162,59,.12); --amber-edge:rgba(233,162,59,.32); --amber-glow:rgba(233,162,59,.45);
+  --err:#FF8A8A; --err-wash:rgba(239,68,68,.10); --err-edge:rgba(239,68,68,.30);
+  --ok:#34D399;
+  --r:14px; --r-sm:9px; --max:1220px;
+  --quick:130ms; --base:220ms; --ease:cubic-bezier(.2,0,.2,1);
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+:root[data-theme=light]{
+  --bg:#FBFAF8; --bg-2:#F4F1EC; --panel:#FFFFFF; --panel-2:#F4F1EC; --sunken:#EFEBE3;
+  --line:#E4DFD5; --line-2:#D6CFC0; --hair:rgba(20,18,14,.06);
+  --t1:#16151A; --t2:#5B5750; --t3:#726D64;
+  --amber-ink:#9A5710;
+  --amber-wash:#FBF1E3; --amber-edge:rgba(154,87,16,.28); --amber-glow:rgba(233,162,59,.35);
+  --err:#C81E1E; --err-wash:rgba(200,30,30,.07); --err-edge:rgba(200,30,30,.26);
+  --ok:#0F8F5F;
+  color-scheme:light;
+}
+
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{
+  margin:0;font-family:var(--sans);background:var(--bg);color:var(--t1);
+  line-height:1.62;-webkit-font-smoothing:antialiased;font-size:16px;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+svg{display:block}
+::selection{background:var(--amber-glow);color:#1A1204}
+:where(a,button,summary,[tabindex],input):focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:6px}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 26px}
+@media(max-width:560px){.wrap{padding:0 18px}}
+
+.skip{
+  position:absolute;left:14px;top:-70px;z-index:200;padding:11px 18px;border-radius:10px;
+  background:var(--amber);color:#1A1204;font-weight:750;font-size:14px;
+  transition:top var(--quick) var(--ease);
+}
+.skip:focus{top:14px}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.site-header{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);
+  backdrop-filter:blur(14px) saturate(1.3);
+  border-bottom:1px solid var(--line);
+}
+.nav{display:flex;align-items:center;gap:18px;height:64px}
+.brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.03em;font-size:18.5px;flex:none;color:var(--t1)}
+.brand .tile{
+  width:30px;height:30px;border-radius:9px;display:block;flex:none;
+  box-shadow:0 4px 14px -5px var(--amber-glow);
+}
+.brand .tile svg{width:100%;height:100%;display:block}
+.nav-links{display:flex;align-items:center;gap:3px;margin-left:auto}
+.nav-links a{
+  padding:7px 11px;border-radius:8px;color:var(--t2);font-size:14px;font-weight:550;
+  transition:color var(--quick) var(--ease),background var(--quick) var(--ease);
+}
+.nav-links a:hover{color:var(--t1);background:var(--panel-2)}
+.nav-links a.active{color:var(--amber-ink);background:var(--amber-wash)}
+.nav-act{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+.nav-links+.nav-act{margin-left:14px}
+.iconbtn{
+  width:36px;height:36px;border-radius:9px;border:1px solid var(--line);background:var(--panel);
+  display:grid;place-items:center;color:var(--t2);flex:none;
+  transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease);
+}
+.iconbtn:hover{color:var(--t1);border-color:var(--line-2)}
+.iconbtn svg{width:17px;height:17px}
+:root[data-theme=light] .moon{display:none}
+:root[data-theme=dark] .sun{display:none}
+.ghlink{
+  display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:9px;
+  border:1px solid var(--line);background:var(--panel);font-size:14px;font-weight:600;color:var(--t2);
+  transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease);
+}
+.ghlink:hover{color:var(--t1);border-color:var(--line-2)}
+.ghlink svg{width:16px;height:16px}
+@media(max-width:900px){.nav-links{display:none}}
+@media(max-width:560px){.ghlink span{display:none}.ghlink{padding:0 10px}}
+
+/* ── Status strip ────────────────────────────────────────────────────────── */
+.status-strip{border-bottom:1px solid var(--line);background:var(--amber-wash)}
+.status-strip .wrap{
+  display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;
+  padding:9px 26px;font-size:13px;color:var(--t2);
+}
+.status-strip b{color:var(--amber-ink);font-weight:700}
+.status-strip a{color:var(--amber-ink);font-weight:600}
+.status-strip a:hover{text-decoration:underline}
+
+/* ── Docs shell ──────────────────────────────────────────────────────────── */
+.docs-shell{display:grid;grid-template-columns:256px minmax(0,1fr);gap:40px;align-items:start;padding:32px 0 76px}
+@media(max-width:900px){.docs-shell{grid-template-columns:minmax(0,1fr);gap:22px;padding:22px 0 56px}}
+.docs-nav{
+  position:sticky;top:76px;max-height:calc(100vh - 96px);overflow-y:auto;
+  border:1px solid var(--line);border-radius:var(--r);background:var(--panel);padding:8px;min-width:0;
+}
+@media(max-width:900px){.docs-nav{position:static;max-height:none}}
+.docs-nav .grp{padding:12px 12px 4px;font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--t3);font-weight:800}
+.docs-nav .grp:first-child{padding-top:8px}
+.docs-nav a{
+  display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:8px;color:var(--t2);
+  font-size:14.5px;font-weight:550;transition:color var(--quick) var(--ease),background var(--quick) var(--ease);
+}
+.docs-nav a:hover{background:var(--panel-2);color:var(--t1)}
+.docs-nav a.active{background:var(--amber-wash);color:var(--amber-ink);font-weight:650}
+.docs-nav a .dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.55;flex:none}
+.docs-main{min-width:0}
+.docs-crumb{font-size:12.5px;color:var(--t3);margin-bottom:10px;font-weight:600;letter-spacing:.02em;display:flex;gap:8px;align-items:center}
+.docs-crumb a{color:var(--t3)}
+.docs-crumb a:hover{color:var(--amber-ink)}
+.docs-error{
+  color:var(--err);background:var(--err-wash);border:1px solid var(--err-edge);
+  padding:14px 16px;border-radius:var(--r-sm);
+}
+.docs-pager{display:flex;gap:14px;margin-top:52px;padding-top:24px;border-top:1px solid var(--line)}
+.docs-pager a{
+  flex:1;min-width:0;border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;
+  transition:border-color var(--quick) var(--ease),background var(--quick) var(--ease);
+}
+.docs-pager a:hover{border-color:var(--amber-edge);background:var(--amber-wash)}
+.docs-pager .to{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);display:block;margin-bottom:4px}
+.docs-pager .nm{font-size:15px;font-weight:650;color:var(--t1)}
+.docs-pager .next{text-align:right}
+@media(max-width:560px){.docs-pager{flex-direction:column}.docs-pager .next{text-align:left}}
+
+/* ── Markdown body ───────────────────────────────────────────────────────── */
+.markdown{font-size:16.2px;min-width:0}
+.markdown>*:first-child{margin-top:0}
+.markdown h1,.markdown h2,.markdown h3,.markdown h4{letter-spacing:-.028em;font-weight:800;line-height:1.15;scroll-margin-top:80px}
+.markdown h1{font-size:clamp(28px,4.2vw,38px);margin:.2em 0 .5em;padding-bottom:.32em;border-bottom:1px solid var(--line)}
+.markdown h2{font-size:clamp(21px,3vw,26px);margin:1.8em 0 .6em;padding-bottom:.26em;border-bottom:1px solid var(--line)}
+.markdown h3{font-size:19px;margin:1.6em 0 .5em}
+.markdown h4{font-size:16.2px;margin:1.3em 0 .4em}
+.markdown p,.markdown li{color:var(--t2)}
+.markdown strong,.markdown b{color:var(--t1);font-weight:700}
+.markdown em{color:var(--t1)}
+.markdown a{color:var(--amber-ink);font-weight:600;text-underline-offset:2px}
+.markdown a:hover{text-decoration:underline}
+.markdown code{
+  font-family:var(--mono);font-size:.87em;background:var(--sunken);
+  border:1px solid var(--line);padding:1px 5px;border-radius:5px;color:var(--t1);
+}
+/* Inline code is the one thing here that must never force a horizontal
+   scroll: docs prose is full of long identifiers, DSNs and file paths, and
+   at 390px an unbroken 40-character token inside a <p> would take the whole
+   page with it. Code inside <pre> is excluded — that block already scrolls
+   on its own axis, and wrapping it would corrupt the command it holds. */
+.markdown :is(p,li,td,th,h1,h2,h3,h4,blockquote) code{overflow-wrap:anywhere;word-break:break-word}
+.markdown ul,.markdown ol{padding-left:1.3em}
+.markdown li+li{margin-top:.32em}
+.markdown li::marker{color:var(--t3)}
+.markdown blockquote{
+  margin:1.2em 0;padding:.55em 1.1em;border-left:3px solid var(--amber);
+  background:var(--amber-wash);color:var(--t2);border-radius:0 var(--r-sm) var(--r-sm) 0;
+}
+.markdown blockquote>*:first-child{margin-top:0}
+.markdown blockquote>*:last-child{margin-bottom:0}
+.markdown table{border-collapse:collapse;width:100%;margin:1.3em 0;font-size:14.3px}
+.markdown .tblwrap{overflow-x:auto;margin:1.3em 0;border-radius:var(--r-sm);border:1px solid var(--line)}
+.markdown .tblwrap table{margin:0;border:0}
+.markdown th,.markdown td{border-bottom:1px solid var(--line);padding:9px 13px;text-align:left;color:var(--t2);white-space:nowrap}
+.markdown td:first-child,.markdown th:first-child{padding-left:14px}
+.markdown th{background:var(--panel-2);font-weight:700;color:var(--t1);white-space:nowrap;position:sticky;top:0}
+.markdown tr:last-child td{border-bottom:0}
+.markdown img{border-radius:10px;margin:1.2em 0;border:1px solid var(--line)}
+.markdown hr{border:none;border-top:1px solid var(--line);margin:2.2em 0}
+
+/* ── Code blocks ─────────────────────────────────────────────────────────── */
+.markdown .codeblock{
+  background:#0C1116;border:1px solid var(--line-2);border-radius:12px;
+  margin:1.3em 0;overflow:hidden;box-shadow:0 1px 0 0 var(--hair) inset;
+}
+.markdown .codeblock .cb-bar{
+  display:flex;align-items:center;gap:10px;padding:9px 10px 9px 14px;
+  border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);
+}
+.markdown .codeblock .cb-lang{
+  font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:#8195AC;font-weight:600;
+}
+.markdown .codeblock .cb-copy{
+  margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:7px;
+  border:1px solid rgba(255,255,255,.12);color:#C8D4E3;font-size:12px;font-weight:600;
+  transition:background var(--quick) var(--ease),border-color var(--quick) var(--ease),color var(--quick) var(--ease);
+}
+.markdown .codeblock .cb-copy:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22)}
+.markdown .codeblock .cb-copy svg{width:13px;height:13px}
+.markdown .codeblock .cb-copy.copied{color:#5EEAD4;border-color:rgba(94,234,212,.4)}
+.markdown pre{margin:0;padding:16px 18px;overflow-x:auto}
+.markdown pre code{
+  background:none;border:0;padding:0;font-family:var(--mono);font-size:13.4px;line-height:1.72;
+  color:#C8D4E3;overflow-wrap:normal;word-break:normal;white-space:pre;tab-size:2;
+}
+
+/* ═══ Shared code-token palette ═══════════════════════════════════════════
+   One fixed palette across the Vulos suite, deliberately independent of the
+   page theme — the code surface (#0C1116) stays dark whether the reader is
+   in light or dark mode, the way a terminal window would. Every class below
+   is one this build's vendored highlight.js (site/assets/vendor/highlight.min.js
+   — core + bash/go/sql/json/yaml/html/javascript/nginx/ini/plaintext) is
+   confirmed to emit for those ten languages; none fall through unstyled. */
+.hljs{color:#C8D4E3}
+.hljs-comment,.hljs-quote{color:#6B7C93;font-style:italic}
+.hljs-keyword,.hljs-class,.hljs-type{color:#C4B5FD}
+.hljs-string,.hljs-regexp,.hljs-meta-string{color:#5EEAD4}
+.hljs-number,.hljs-literal,.hljs-symbol{color:#FBBF24}
+.hljs-function,.hljs-title,.hljs-built_in,.hljs-section{color:#7DD3FC}
+.hljs-attr,.hljs-attribute,.hljs-property{color:#93C5FD}
+.hljs-variable,.hljs-template-variable,.hljs-subst{color:#FDA4AF}
+.hljs-meta,.hljs-meta-keyword,.hljs-name,.hljs-doctag{color:#FDBA74}
+.hljs-tag,.hljs-operator,.hljs-bullet,.hljs-punctuation{color:#8195AC}
+.hljs-params{color:#C8D4E3}
+.hljs-emphasis{font-style:italic}
+.hljs-strong{font-weight:700}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.site-footer{border-top:1px solid var(--line);margin-top:20px}
+.foot{padding:34px 0 46px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+.foot .left{display:flex;align-items:center;gap:11px;color:var(--t3);font-size:14px}
+.foot .left img{width:24px;height:24px;border-radius:7px}
+.foot .links{display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var(--t2)}
+.foot .links a:hover{color:var(--t1)}

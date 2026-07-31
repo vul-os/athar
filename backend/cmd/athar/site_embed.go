@@ -1,4 +1,4 @@
-//go:build embed_frontend
+//go:build embed_site
 
 package main
 
@@ -10,7 +10,14 @@ import (
 )
 
 // siteFS holds the standalone marketing site served for athar.vulos.org.
-// `npm run build:all` copies the repo-root site/ here before the embedded build.
+// `node scripts/build-binary.mjs` copies the repo-root site/ here before the
+// embedded build.
+//
+// This is a separate build tag from the dashboard now (which is always
+// embedded — see frontend.go): the marketing site is a static tree with its
+// own lifecycle (built and owned outside this package's scope), while the
+// dashboard is source that lives in this repository and has no reason to be
+// optional.
 //
 //go:embed site
 var siteFS embed.FS

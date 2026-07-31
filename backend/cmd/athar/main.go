@@ -255,13 +255,14 @@ func applyRetention(ctx context.Context, st store.Store, days int) {
 
 // securityHeaders sets the response headers that apply to every route.
 func securityHeaders(cfg *config.Config, next http.Handler) http.Handler {
-	// The dashboard is a Vite bundle with no inline script, so the CSP can be
-	// strict. 'unsafe-inline' is allowed for styles only, which Tailwind's
-	// runtime and the PWA install prompt both need.
+	// The dashboard is hand-written HTML/CSS/JS with no inline script and no
+	// inline style — ui.css is a plain external stylesheet and app.js an
+	// external ES module — so the CSP needs no 'unsafe-inline' anywhere,
+	// tighter than the Tailwind-era policy this replaced.
 	csp := []string{
 		"default-src 'self'",
 		"script-src 'self'",
-		"style-src 'self' 'unsafe-inline'",
+		"style-src 'self'",
 		"img-src 'self' data:",
 		"font-src 'self' data:",
 		"connect-src 'self'",

@@ -9,6 +9,22 @@ Athar binds `127.0.0.1` by default (see [Configuration](./configuration.md#host-
 - **A tunnel** — cloudflared, ngrok, or Ephor, pointed at `127.0.0.1:3100`. Simplest option if you don't want to manage TLS or open a port.
 - **A reverse proxy** — nginx or Caddy terminating TLS on a domain you control and forwarding to loopback. If you go this route, set `trust_proxy_headers: true` (or `ATHAR_TRUST_PROXY_HEADERS=true`) **and** confirm the proxy actually overwrites `X-Forwarded-For`/`X-Real-IP` rather than passing through whatever a client sent — with it on, that header is how Athar decides what country to record, and if anything can still reach Athar directly, that becomes forgeable. See [Configuration](./configuration.md#trust_proxy_headers).
 
+A minimal nginx server block for the reverse-proxy path:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name analytics.example.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3100;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
 Once you're behind TLS, also pass `-secure-cookies` (or set it up however you run the process) so the dashboard's session cookie is marked `Secure`.
 
 ## Running as a service
