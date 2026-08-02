@@ -222,12 +222,12 @@ code,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums lining-nums
   border-bottom:1px solid var(--line);
 }
 .nav{display:flex;align-items:center;gap:16px;height:66px;position:relative;z-index:1}
-.brand{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;letter-spacing:-.02em;font-size:19px;flex:none;color:var(--t1)}
+.brand{display:inline-flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;letter-spacing:-.02em;font-size:19px;flex:none;color:var(--t1);min-height:44px}
 .brand .tile{width:30px;height:30px;border-radius:8px;display:block;flex:none;overflow:hidden}
 .brand .tile img{width:100%;height:100%;display:block}
 .brand .ar{font-family:var(--sans);font-weight:500;font-size:15px;color:var(--t3);letter-spacing:0;padding-left:11px;border-left:1px solid var(--line-2);line-height:1.3}
 .nav-links{display:flex;align-items:center;gap:2px;margin-left:14px}
-.nav-links a{padding:7px 10px;border-radius:6px;color:var(--t2);font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;transition:color var(--quick) var(--ease),background var(--quick) var(--ease)}
+.nav-links a{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;border-radius:6px;color:var(--t2);font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;transition:color var(--quick) var(--ease),background var(--quick) var(--ease)}
 .nav-links a:hover{color:var(--t1);background:var(--panel-2)}
 .nav-links a.active{color:var(--amber-ink);background:var(--amber-wash)}
 .nav-act{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
@@ -236,11 +236,11 @@ code,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums lining-nums
 .iconbtn svg{width:17px;height:17px}
 :root[data-theme=light] .moon{display:none}
 :root[data-theme=dark] .sun{display:none}
-.ghlink{display:inline-flex;align-items:center;gap:7px;height:44px;padding:0 13px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font-size:14px;font-weight:600;color:var(--t2);transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease)}
+.ghlink{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:44px;min-width:44px;padding:0 13px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font-size:14px;font-weight:600;color:var(--t2);transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease)}
 .ghlink:hover{color:var(--t1);border-color:var(--line-2)}
 .ghlink svg{width:16px;height:16px}
 @media(max-width:1080px){.nav-links{display:none}}
-@media(max-width:620px){.ghlink span{display:none}.ghlink{padding:0 11px}.brand .ar{display:none}}
+@media(max-width:620px){.ghlink span{display:none}.ghlink{padding:0}.brand .ar{display:none}}
 
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:9px;font-weight:700;font-size:15px;border:1px solid transparent;transition:transform var(--quick) var(--ease),border-color var(--quick) var(--ease),background var(--quick) var(--ease),color var(--quick) var(--ease);min-height:44px}
@@ -320,6 +320,11 @@ h1 em{font-style:italic;font-weight:560;color:var(--amber-ink)}
 }
 .strip i:last-child{border-right:0;margin-right:0;padding-right:0}
 .strip i b{color:var(--amber-ink);font-weight:600;font-size:15px}
+/* The licence link is a flex item, so it is blockified — a standalone
+   control, not a link inside a sentence, and it has to clear 44px. The
+   padding is cancelled by a matching negative margin so the strip's own
+   rhythm does not change. */
+.strip i a{display:inline-flex;align-items:center;gap:5px;min-height:44px;margin-block:-10px;border-radius:7px}
 @media(max-width:720px){
   .strip i{width:100%;border-right:0;border-bottom:1px solid var(--line);margin-right:0;padding:12px 0}
   .strip i:last-child{border-bottom:0}
@@ -386,13 +391,48 @@ h1 em{font-style:italic;font-weight:560;color:var(--amber-ink)}
 .callout.pend{border-left-color:var(--pend);background:var(--pend-wash)}
 .callout.pend a{color:var(--pend)}
 
-/* ── Terminal / code panel ──────────────────────────────────────────────── */
+/* ── Terminal / code panel ──────────────────────────────────────────────
+   Same two behaviours as the docs, same reasoning — see the long note above
+   .markdown .codeblock in site/assets/style.css. Every line of source is its
+   own block (span.cl, built by the script at the bottom of this file) so
+   each can carry its own hanging indent when it folds; the newline stays
+   BETWEEN the spans, and the <code> is white-space:normal, so those collapse
+   visually while textContent keeps the real, unfolded source for selection
+   and copy. None of this page's four panels needs its columns held, so all
+   four fold; .is-wide is kept live because the classifier is shared and the
+   panels' contents are not frozen. */
 .codewrap{background:#0C1116;border:1px solid var(--line-2);border-radius:var(--r);overflow:hidden;min-width:0}
 .codebar{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02)}
 .codebar i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.14);display:block;flex:none}
-.codebar .path{margin-left:6px;font-family:var(--mono);font-size:11.5px;color:#8195AC}
-.codewrap pre{margin:0;padding:19px 20px;overflow-x:auto}
-.codewrap code{font-family:var(--mono);font-size:13.2px;line-height:1.8;color:#C8D4E3;white-space:pre}
+.codebar .path{margin-left:6px;font-family:var(--mono);font-size:11.5px;color:#8195AC;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.codebar .pan{
+  margin-left:auto;display:none;align-items:center;gap:5px;font-family:var(--mono);font-size:11px;
+  letter-spacing:.07em;text-transform:uppercase;color:#93C5FD;font-weight:600;flex:none;
+  border:1px solid rgba(147,197,253,.30);background:rgba(147,197,253,.10);padding:2px 8px;border-radius:99px;
+}
+.codewrap.is-wide .codebar .pan{display:inline-flex}
+.codeview{position:relative}
+.codewrap pre{margin:0;padding:19px 20px;overflow-x:hidden}
+.codewrap code{font-family:var(--mono);font-size:13.2px;--cl-lh:1.8;line-height:var(--cl-lh);color:#C8D4E3;white-space:normal}
+.codewrap code .cl{
+  display:block;min-height:calc(1em * var(--cl-lh));
+  white-space:pre-wrap;overflow-wrap:anywhere;
+  padding-left:var(--hang,2.6ch);text-indent:calc(-1 * var(--hang,2.6ch));
+}
+.codewrap.is-wide pre{overflow-x:auto;overscroll-behavior-x:contain;padding-bottom:11px}
+.codewrap.is-wide code .cl{white-space:pre;overflow-wrap:normal;padding-left:0;text-indent:0}
+@supports not selector(::-webkit-scrollbar){
+  .codewrap.is-wide pre{scrollbar-width:thin;scrollbar-color:#4A5A6E transparent}
+}
+.codewrap.is-wide pre::-webkit-scrollbar{height:10px}
+.codewrap.is-wide pre::-webkit-scrollbar-track{background:rgba(255,255,255,.04);border-radius:99px}
+.codewrap.is-wide pre::-webkit-scrollbar-thumb{background:#4A5A6E;border-radius:99px;border:3px solid #0C1116}
+.codewrap.is-wide .codeview::after{
+  content:"";position:absolute;top:0;right:0;bottom:0;width:54px;pointer-events:none;
+  background:linear-gradient(to left,#0C1116 12%,rgba(12,17,22,0));
+  opacity:1;transition:opacity var(--base) var(--ease);
+}
+.codewrap.is-wide.at-end .codeview::after{opacity:0}
 .split{display:grid;grid-template-columns:minmax(0,1.06fr) minmax(0,.94fr);gap:clamp(26px,3.6vw,44px);align-items:start;margin-top:34px}
 @media(max-width:960px){.split{grid-template-columns:minmax(0,1fr)}}
 .steps{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
@@ -404,11 +444,11 @@ h1 em{font-style:italic;font-weight:560;color:var(--amber-ink)}
 
 /* ── Store-seam diagram ──────────────────────────────────────────────────── */
 .seam{margin-top:36px;border:1px solid var(--line);border-radius:var(--r);padding:28px 24px;position:relative;background:var(--panel)}
-.seam-tag{position:absolute;top:-9px;left:22px;padding:1px 11px;border-radius:99px;background:var(--bg);border:1px solid var(--line-2);font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3)}
+.seam-tag{position:absolute;top:-9px;left:22px;padding:1px 11px;border-radius:99px;background:var(--bg);border:1px solid var(--line-2);font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3)}
 .seam-flow{display:grid;grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);align-items:center}
 @media(max-width:760px){.seam-flow{grid-template-columns:minmax(0,1fr)}}
 .seam-core{border-radius:var(--r-sm);padding:20px;text-align:center;background:var(--bg);border:1px solid var(--amber-edge)}
-.seam-core .badge{display:inline-block;margin-bottom:8px;padding:2px 9px;border-radius:99px;font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--amber-ink);background:var(--amber-wash);border:1px solid var(--amber-edge)}
+.seam-core .badge{display:inline-block;margin-bottom:8px;padding:2px 9px;border-radius:99px;font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--amber-ink);background:var(--amber-wash);border:1px solid var(--amber-edge)}
 .seam-core b{display:block;font-family:var(--display);font-size:19px;font-weight:650}
 .seam-core span{display:block;color:var(--t3);font-size:12.5px;margin-top:5px;font-family:var(--mono)}
 .seam-join{display:grid;place-items:center;color:var(--amber-ink);position:relative;height:100%;min-height:36px}
@@ -437,18 +477,56 @@ h1 em{font-style:italic;font-weight:560;color:var(--amber-ink)}
 .lrow:last-child{border-bottom:0}
 .lrow b{color:var(--t1);font-weight:650}
 
-/* ── Comparison table ────────────────────────────────────────────────────── */
-.cmpwrap{overflow-x:auto;margin-top:32px;border:1px solid var(--line);border-radius:var(--r)}
-table.cmp{border-collapse:collapse;width:100%;min-width:700px;font-size:14px}
-table.cmp th,table.cmp td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-table.cmp thead th{background:var(--panel-2);font-family:var(--mono);font-weight:600;color:var(--t2);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
+/* ── Comparison table ────────────────────────────────────────────────────
+   Six columns of prose, and `white-space:nowrap` on every cell forced its
+   intrinsic width to 1227px — wider than the 1144px column it sits in at
+   1440, so it panned even on a desktop, and at 390 it was a 1227px drag with
+   the project name scrolled off the moment you looked at a value. Neither
+   half of that is reading.
+
+   ≥861px the cells simply wrap. The table then fits its column at every
+   width it is used at, and nothing scrolls.
+
+   ≤860px it stops being a table at all and becomes one card per project,
+   each row label restated from the header via data-l. Six columns cannot be
+   made legible in 390px of paper; five stacked label/value pairs can. The
+   header row is dropped because every cell now carries its own label. */
+.cmpwrap{margin-top:32px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+table.cmp{border-collapse:collapse;width:100%;font-size:14px}
+table.cmp th,table.cmp td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+table.cmp thead th{background:var(--panel-2);font-family:var(--mono);font-weight:600;color:var(--t2);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
 table.cmp tbody td{color:var(--t2)}
+table.cmp tbody td:first-child{white-space:nowrap;font-weight:650;color:var(--t1)}
 table.cmp tbody tr:last-child td{border-bottom:0}
 table.cmp tr.us td{color:var(--t1);font-weight:650;background:var(--amber-wash)}
 table.cmp tr.us td:first-child{color:var(--amber-ink);font-weight:800;font-family:var(--display)}
 .yes{color:var(--ok);font-weight:700}
 .no{color:var(--t3)}
 .partial{color:var(--pend)}
+@media(max-width:860px){
+  table.cmp,table.cmp tbody,table.cmp tr,table.cmp td{display:block;width:100%}
+  table.cmp thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  table.cmp tr{border-bottom:1px solid var(--line-2);padding:6px 0 12px}
+  table.cmp tr:last-child{border-bottom:0}
+  table.cmp td{border-bottom:0;padding:5px 18px}
+  table.cmp td::before{
+    content:attr(data-l);display:block;font-family:var(--mono);font-size:11px;
+    letter-spacing:.11em;text-transform:uppercase;color:var(--t3);font-weight:600;margin-bottom:1px;
+  }
+  table.cmp td:first-child{padding-top:12px;font-family:var(--display);font-size:19px;font-weight:700;letter-spacing:-.02em}
+  table.cmp td:first-child::before{display:none}
+  table.cmp tr.us td{background:none}
+  table.cmp tr.us{background:var(--amber-wash)}
+}
+/* The awkward middle: too narrow for six columns, far too wide for a stack of
+   full-width label-over-value pairs. Between the two the card keeps its rows
+   but sets the label beside the value, so the eye still runs down one column
+   of labels the way it would down a table header. */
+@media(min-width:561px) and (max-width:860px){
+  table.cmp td{display:grid;grid-template-columns:11.5rem minmax(0,1fr);gap:0 16px;align-items:baseline;padding:6px 18px}
+  table.cmp td::before{margin-bottom:0}
+  table.cmp td:first-child{display:block}
+}
 
 /* ── Closing plate: the readings this page did not take ──────────────────── */
 .trace{margin-top:34px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--panel);overflow:hidden}
@@ -464,31 +542,67 @@ table.cmp tr.us td:first-child{color:var(--amber-ink);font-weight:800;font-famil
 .trace-foot{padding:17px 20px;border-top:1px solid var(--line);color:var(--t2);font-size:14.2px}
 .trace-foot b{color:var(--t1)}
 
-/* ── Footer ─────────────────────────────────────────────────────────────── */
-.site-footer{border-top:1px solid var(--line);margin-top:80px;position:relative;z-index:1}
-.foot{padding:32px 0 46px;color:var(--t3);font-size:14px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
-.foot .links{display:flex;gap:4px 14px;flex-wrap:wrap;font-size:14px;color:var(--t2)}
-/* Tap targets grown to 44px tall without moving anything horizontally: the
-   vertical padding is cancelled by a matching negative *vertical* margin, and
-   the horizontal padding is left to widen the target. A negative horizontal
-   margin here is what pushed the first and last link past the page edge — a
-   real overflow that body{overflow-x:hidden} then hid. */
-.foot .links a{padding:12px 7px;margin:-12px 0}
-.foot .links a:hover{color:var(--t1)}
-.colophon{padding:0 0 44px;font-family:var(--mono);font-size:11.5px;line-height:1.9;letter-spacing:.03em;color:var(--t3);max-width:82ch}
+/* ── Footer and colophon ────────────────────────────────────────────────
+   PADDING-BLOCK, NEVER THE `padding` SHORTHAND. Both of these elements are
+   also `.wrap`s, and `.wrap` carries the page gutter as `padding:0 28px`.
+   Writing `padding:32px 0 46px` here is the same specificity and later in
+   the file, so it won overwriting the gutter with zero — and the whole
+   footer, plus the whole colophon, went flush against the viewport edge at
+   every width below 1200px. At 390px the colophon's text literally started
+   at x=0 and ended at x=390. The same collision was in docs.html's
+   .docs-shell. It is stated as padding-block in all three places now, so
+   the horizontal gutter can only ever come from .wrap.
 
-/* ═══ Shared code-token palette — identical to site/assets/style.css ═══════ */
+   The colophon had a second fault on top of that: `max-width:82ch` was set
+   on the .wrap element itself, which replaced .wrap's own max-width, so
+   `margin:0 auto` then centred a 566px block in the viewport instead of
+   aligning it to the page's left rule. At 1440 it floated 290px right of
+   every other line on the page. The measure now lives on an inner <p>, and
+   the .wrap stays the page's width. */
+.site-footer{border-top:1px solid var(--line);margin-top:80px;position:relative;z-index:1}
+.foot{padding-block:30px 44px;color:var(--t3);font-size:14px;display:flex;flex-wrap:wrap;gap:14px 20px;align-items:center;justify-content:space-between}
+.foot .left{display:flex;align-items:center;min-width:0}
+.foot .links{display:flex;gap:2px 18px;flex-wrap:wrap;font-size:14px;color:var(--t2)}
+/* Tap targets grown to 44px without moving anything horizontally: the
+   padding is cancelled by a matching negative margin on the same axis. A
+   negative *horizontal* margin without the matching padding is what pushed
+   the first and last link past the page edge once — a real overflow that
+   body{overflow-x:hidden} then hid. */
+.foot .links a{display:inline-flex;align-items:center;min-height:44px;padding:0 10px;margin:0 -10px;border-radius:8px}
+.foot .links a:hover{color:var(--t1);background:var(--panel-2)}
+/* No negative margin on .links itself: the anchors already carry
+   `margin:0 -10px` to cancel their own hit-area padding, and stacking a
+   second one on the container pushed the first link to x=-2 — the exact
+   overflow shape the note above warns about. */
+@media(max-width:560px){
+  .foot{flex-direction:column;align-items:flex-start;gap:8px}
+}
+.colophon{padding-block:0 44px}
+.colophon p{
+  margin:0;font-family:var(--mono);font-size:11.5px;line-height:1.9;letter-spacing:.03em;
+  color:var(--t3);max-width:82ch;
+}
+
+/* ═══ Shared code-token palette — identical to site/assets/style.css ═══════
+   Ten roles. Every class the vendored highlight.js build can emit is
+   assigned to one of them — all 27 of them; the full list, how to re-derive
+   it, and the measured contrast of every role against the fixed #0C1116 code
+   surface are documented once, in site/assets/style.css. Nothing reaches the
+   .hljs default except text highlight.js did not tokenise at all. The
+   comment tone is #6C7D94 (4.51:1); the #6B7C93 an earlier pass used
+   measured 4.45:1 and was the one token on either page under the floor. */
 .hljs{color:#C8D4E3}
-.hljs-comment,.hljs-quote{color:#6B7C93;font-style:italic}
-.hljs-keyword,.hljs-class,.hljs-type{color:#C4B5FD}
+.hljs-comment,.hljs-quote,.hljs-doctag{color:#6C7D94;font-style:italic}
+.hljs-keyword,.hljs-class,.hljs-type,.hljs-literal,.hljs-symbol{color:#C4B5FD}
 .hljs-string,.hljs-regexp,.hljs-meta-string{color:#5EEAD4}
-.hljs-number,.hljs-literal,.hljs-symbol{color:#FBBF24}
+.hljs-number{color:#FBBF24}
 .hljs-function,.hljs-title,.hljs-built_in,.hljs-section{color:#7DD3FC}
 .hljs-attr,.hljs-attribute,.hljs-property{color:#93C5FD}
-.hljs-variable,.hljs-template-variable,.hljs-subst{color:#FDA4AF}
-.hljs-meta,.hljs-meta-keyword,.hljs-name,.hljs-doctag{color:#FDBA74}
+.hljs-variable,.hljs-template-variable,.hljs-subst,.hljs-params{color:#FDA4AF}
+.hljs-meta,.hljs-meta-keyword,.hljs-name{color:#FDBA74}
 .hljs-tag,.hljs-operator,.hljs-bullet,.hljs-punctuation{color:#8195AC}
-.hljs-params{color:#C8D4E3}
+.hljs-emphasis{font-style:italic}
+.hljs-strong{font-weight:700}
 
 /* ── Responsive: every collapsible track is minmax(0,1fr) ────────────────── */
 .frame,.codewrap,.lcol,.seam-node,.trace{min-width:0}
@@ -507,6 +621,15 @@ table.cmp tr.us td:first-child{color:var(--amber-ink);font-weight:800;font-famil
   .vulos-foot { display: inline-flex; align-items: center; gap: 9px; font-size: 13.5px; line-height: 1.45; text-decoration: none; color: inherit; opacity: .85; transition: opacity .15s ease; }
   .vulos-foot:hover { opacity: 1; text-decoration: none; }
   .vulos-foot img { display: block; width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; }
+
+/* Athar's tap-target floor, applied OUTSIDE the shared block above so that
+   block stays byte-identical across the suite and can still be diffed as one
+   thing. The shared home button is 34px and the shared footer line is 20px
+   tall; this site holds standalone controls to 44px, so both are grown here.
+   The footer line's extra height is cancelled by a matching negative margin,
+   so it gains a target without moving the rule above it. */
+.vulos-home{width:44px;height:44px;border-radius:9px}
+.vulos-foot{min-height:44px;padding-block:12px;margin-block:-12px}
 </style>
 </head>
 <body>
@@ -634,16 +757,24 @@ table.cmp tr.us td:first-child{color:var(--amber-ink);font-weight:800;font-famil
 
     <div class="split">
       <div class="rv">
+        <!-- Hand-set rather than run through highlight.js, because this is a
+             derivation rather than a source file — but set with the SHARED
+             PALETTE'S OWN CLASSES, not with three loose inline hex values
+             copied out of it. Those three were most of why this page showed
+             only six distinct token colours: the one block with the most to
+             say about structure was saying it in a private, three-colour
+             sub-palette that no rule governed and no contrast sweep could
+             find. -->
         <div class="codewrap">
           <div class="codebar"><i></i><i></i><i></i><span class="path">identity.go</span></div>
-          <pre><code>1 · once per instance, generated and stored
-<span style="color:#93C5FD">instance_secret</span> = random(32 bytes)
+          <pre><code class="hljs" data-handset><span class="hljs-comment">// 1 · once per instance, generated and stored</span>
+<span class="hljs-keyword">const</span> <span class="hljs-attr">instance_secret</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">random</span>(<span class="hljs-number">32</span> <span class="hljs-name">bytes</span>)
 
-2 · recomputed once per UTC day
-<span style="color:#93C5FD">salt</span> = HMAC(<span style="color:#FDA4AF">instance_secret</span>, <span style="color:#5EEAD4">"2026-07-31"</span>)
+<span class="hljs-comment">// 2 · recomputed once per UTC day</span>
+<span class="hljs-attr">salt</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">HMAC</span>(<span class="hljs-variable">instance_secret</span>, <span class="hljs-string">"2026-07-31"</span>)
 
-3 · per beacon — the IP is discarded right after this line
-<span style="color:#93C5FD">visitor</span> = HMAC(<span style="color:#FDA4AF">salt</span>, <span style="color:#FDA4AF">website_id</span> ‖ <span style="color:#FDA4AF">ip</span> ‖ <span style="color:#FDA4AF">user_agent</span>)</code></pre>
+<span class="hljs-comment">// 3 · per beacon — the IP is discarded right after this line</span>
+<span class="hljs-attr">visitor</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">HMAC</span>(<span class="hljs-variable">salt</span>, <span class="hljs-variable">website_id</span> <span class="hljs-operator">‖</span> <span class="hljs-variable">ip</span> <span class="hljs-operator">‖</span> <span class="hljs-variable">user_agent</span>)</code></pre>
         </div>
       </div>
       <div class="rv" aria-hidden="true">
@@ -915,11 +1046,11 @@ npm install &amp;&amp; npm run build
       <table class="cmp">
         <thead><tr><th>Project</th><th>Licence</th><th>Weight</th><th>Heatmaps</th><th>Ecommerce</th><th>Built-in GeoIP</th></tr></thead>
         <tbody>
-          <tr class="us"><td>Athar</td><td>MIT OR Apache-2.0</td><td>Single Go binary</td><td class="yes">Click / scroll / attention</td><td class="yes">Revenue, multi-currency</td><td class="yes">Local .mmdb, no network call</td></tr>
-          <tr><td>Umami</td><td>MIT</td><td>Node/Next.js + Postgres or MySQL</td><td class="no">—</td><td class="no">—</td><td class="no">—</td></tr>
-          <tr><td>Plausible CE</td><td>AGPL-3.0</td><td>Elixir + ClickHouse</td><td class="no">—</td><td class="no">—</td><td class="partial">Optional, self-configured</td></tr>
-          <tr><td>Matomo</td><td>GPL-3.0+</td><td>Heavy — PHP + MySQL</td><td class="partial">Paid plugin</td><td class="yes">Yes</td><td class="partial">Plugin</td></tr>
-          <tr><td>PostHog</td><td>Mostly MIT, some proprietary</td><td>Heavy — ClickHouse + Kafka + Redis</td><td class="partial">Toolbar heatmaps</td><td class="no">Not the focus</td><td class="no">—</td></tr>
+          <tr class="us"><td data-l="Project">Athar</td><td data-l="Licence">MIT OR Apache-2.0</td><td data-l="Weight">Single Go binary</td><td data-l="Heatmaps" class="yes">Click / scroll / attention</td><td data-l="Ecommerce" class="yes">Revenue, multi-currency</td><td data-l="Built-in GeoIP" class="yes">Local .mmdb, no network call</td></tr>
+          <tr><td data-l="Project">Umami</td><td data-l="Licence">MIT</td><td data-l="Weight">Node/Next.js + Postgres or MySQL</td><td data-l="Heatmaps" class="no">—</td><td data-l="Ecommerce" class="no">—</td><td data-l="Built-in GeoIP" class="no">—</td></tr>
+          <tr><td data-l="Project">Plausible CE</td><td data-l="Licence">AGPL-3.0</td><td data-l="Weight">Elixir + ClickHouse</td><td data-l="Heatmaps" class="no">—</td><td data-l="Ecommerce" class="no">—</td><td data-l="Built-in GeoIP" class="partial">Optional, self-configured</td></tr>
+          <tr><td data-l="Project">Matomo</td><td data-l="Licence">GPL-3.0+</td><td data-l="Weight">Heavy — PHP + MySQL</td><td data-l="Heatmaps" class="partial">Paid plugin</td><td data-l="Ecommerce" class="yes">Yes</td><td data-l="Built-in GeoIP" class="partial">Plugin</td></tr>
+          <tr><td data-l="Project">PostHog</td><td data-l="Licence">Mostly MIT, some proprietary</td><td data-l="Weight">Heavy — ClickHouse + Kafka + Redis</td><td data-l="Heatmaps" class="partial">Toolbar heatmaps</td><td data-l="Ecommerce" class="no">Not the focus</td><td data-l="Built-in GeoIP" class="no">—</td></tr>
         </tbody>
       </table>
     </div>
@@ -968,22 +1099,24 @@ npm install &amp;&amp; npm run build
 </section>
 
 <div class="wrap colophon">
-
-    Set in Fraunces, Schibsted Grotesk and IBM Plex Mono — all three self-hosted from ./assets/fonts, with their licences alongside. Figures are unretouched captures of the shipped dashboard, regenerated by scripts/site-screenshots.mjs. No CDN, no remote font, no remote image, no analytics, no network call of any kind.
-  </div>
+  <p>Set in Fraunces, Schibsted Grotesk and IBM Plex Mono — all three self-hosted from ./assets/fonts, with their licences alongside. Figures are unretouched captures of the shipped dashboard, regenerated by scripts/site-screenshots.mjs. No CDN, no remote font, no remote image, no analytics, no network call of any kind.</p>
+</div>
 
 </main>
 
 <footer class="site-footer">
   <div class="wrap foot">
-    <a class="vulos-foot" href="https://vulos.org" target="_blank" rel="noopener">
-      <img src="./assets/vulos-logo.png" alt="" width="18" height="18">
-      <span>Part of <strong>Vulos</strong> — open, self-hostable software</span>
-    </a>
-    <div class="links">
+    <div class="left">
+      <a class="vulos-foot" href="https://vulos.org" target="_blank" rel="noopener">
+        <img src="./assets/vulos-logo.png" alt="" width="18" height="18">
+        <span>Part of <strong>Vulos</strong> — open, self-hostable software</span>
+      </a>
+    </div>
+    <nav class="links" aria-label="Footer">
       <a href="./docs.html">Docs</a>
       <a href="https://github.com/vul-os/athar" target="_blank" rel="noopener">GitHub</a>
-    </div>
+      <a href="./LICENSE.txt">Licence</a>
+    </nav>
   </div>
 </footer>
 
@@ -1001,18 +1134,99 @@ document.documentElement.classList.add('js');
   });
 })();
 
-// ── Highlight the code panels with the same vendored hljs build the docs
-//    use, so the palette and the tokenising are identical. ────────────────
+// ── The code panels ───────────────────────────────────────────────────────
+// Highlighted with the same vendored hljs build the docs use, so the palette
+// and the tokenising are identical, then given the same two narrow-width
+// behaviours — see the note above .codewrap in the stylesheet, and the
+// matching classifier in docs.html.
+//
+// Every source line becomes its own block element so it can carry its own
+// hanging indent when it folds; the "\n" stays BETWEEN those blocks, which
+// is what keeps code.textContent — and therefore any text selection or copy
+// — holding the real, unfolded source.
 (function(){
-  if (!window.hljs) return;
-  document.querySelectorAll('#qs-code, #ecom-code, #ecom-code2').forEach(function(el){
-    var m = (el.className||'').match(/language-(\w+)/);
-    var lang = m ? m[1] : 'bash';
-    try {
-      var res = hljs.highlight(el.textContent, { language: lang });
-      el.innerHTML = res.value;
-      el.classList.add('hljs');
-    } catch(e){ /* leave as plain text */ }
+  var ALIGN_GLYPHS = /[─-╿▀-▟←-⇿■-◿]/;
+  function needsAlignment(src){
+    if (ALIGN_GLYPHS.test(src)) return true;
+    return src.split('\n').some(function(line){ return /\S {3,}\S/.test(line); });
+  }
+  // The hang is measured PER LINE from that line's own leading indentation —
+  // a fixed hang folds an indented line back further LEFT than the line it
+  // continues, which reads as a new, shallower statement. Monospace, so one
+  // leading space is exactly 1ch.
+  function lineWrap(html, src){
+    var srcLines = src.split('\n');
+    var out = [], open = [], cur = '', re = /(<[^>]*>)|([^<]+)/g, m;
+    function hang(i){
+      var lead = (srcLines[i] || '').match(/^[ \t]*/)[0], w = 0;
+      for (var k = 0; k < lead.length; k++) w += lead.charAt(k) === '\t' ? 2 : 1;
+      return (Math.min(w, 10) + 2.6).toFixed(1);
+    }
+    function push(inner){ out.push('<span class="cl" style="--hang:' + hang(out.length) + 'ch">' + inner + '</span>'); }
+    while ((m = re.exec(html)) !== null) {
+      if (m[1]) {
+        var tag = m[1];
+        cur += tag;
+        if (tag.charAt(1) === '/') open.pop();
+        else if (tag.slice(-2) !== '/>') open.push(tag);
+      } else {
+        var parts = m[2].split('\n');
+        for (var i = 0; i < parts.length; i++) {
+          if (i > 0) { push(cur + '</span>'.repeat(open.length)); cur = open.join(''); }
+          cur += parts[i];
+        }
+      }
+    }
+    push(cur + '</span>'.repeat(open.length));
+    return out.join('\n');
+  }
+  function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  var panSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:11px;height:11px"><path d="M8 7 4 12l4 5M16 7l4 5-4 5"/></svg>';
+
+  document.querySelectorAll('.codewrap pre > code').forEach(function(el){
+    var wrap = el.closest('.codewrap');
+    var pre = el.parentElement;
+    var src = el.textContent;
+    var wide = needsAlignment(src);
+    var html;
+    if (el.dataset.handset !== undefined) {
+      // The identity.go panel is a derivation, not a source file — there is
+      // nothing for hljs to lex. It is already marked up with the shared
+      // palette's own classes, so it only needs the line split.
+      html = el.innerHTML;
+    } else if (window.hljs) {
+      var m = (el.className||'').match(/language-(\w+)/);
+      try { html = hljs.highlight(src, { language: m ? m[1] : 'bash' }).value; el.classList.add('hljs'); }
+      catch(e){ html = escapeHtml(src); }
+    } else {
+      html = escapeHtml(src);
+    }
+    el.innerHTML = lineWrap(html, src);
+
+    // Wrap the <pre> so a right-edge fade can sit over it, and state the
+    // affordance in the chrome bar, on any panel that really does scroll.
+    var view = document.createElement('div');
+    view.className = 'codeview';
+    pre.parentElement.insertBefore(view, pre);
+    view.appendChild(pre);
+    if (wide) {
+      wrap.classList.add('is-wide');
+      var bar = wrap.querySelector('.codebar');
+      if (bar) {
+        var pan = document.createElement('span');
+        pan.className = 'pan';
+        pan.title = 'This block is laid out in columns, so it scrolls sideways rather than folding.';
+        pan.innerHTML = panSvg + '<span>scroll</span>';
+        bar.appendChild(pan);
+      }
+      var sync = function(){
+        var atEnd = pre.scrollLeft + pre.clientWidth >= pre.scrollWidth - 2;
+        wrap.classList.toggle('at-end', atEnd || pre.scrollWidth <= pre.clientWidth + 2);
+      };
+      pre.addEventListener('scroll', sync, { passive:true });
+      window.addEventListener('resize', sync);
+      sync();
+    }
   });
 })();
 
