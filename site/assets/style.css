@@ -68,6 +68,12 @@
   --err:#FF8A8A; --err-wash:rgba(239,68,68,.10); --err-edge:rgba(239,68,68,.30);
   --ok:#34D399;
   --r:14px; --r-sm:9px; --max:1220px;
+  /* Docs shell geometry. --hdr-h must equal .nav's height: the desktop rail is
+     pinned to the viewport from directly under the header to its bottom edge,
+     so the two numbers are one number. --rail-w is the rail's full width now
+     that it is flush to the viewport's left edge rather than a card floating
+     inside a centred wrapper. */
+  --hdr-h:64px; --rail-w:288px; --doc-gap:48px;
   --quick:130ms; --base:220ms; --ease:cubic-bezier(.2,0,.2,1);
   --display:'Fraunces Variable',ui-serif,Georgia,'Times New Roman',serif;
   --sans:'Schibsted Grotesk Variable',-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;
@@ -173,20 +179,54 @@ svg{display:block}
    `.wrap`'s own `padding:0 26px` on source order and silently deleted the
    page gutter. Below 1200px that put the rail and every line of prose flush
    against the viewport edge. The same collision existed on .foot and on the
-   landing's .colophon; all three are stated as padding-block now. */
-.docs-shell{display:grid;grid-template-columns:264px minmax(0,1fr);gap:40px;align-items:start;padding-block:32px 76px}
-@media(max-width:900px){.docs-shell{grid-template-columns:minmax(0,1fr);gap:18px;padding-block:16px 56px}}
+   landing's .colophon; all three are stated as padding-block now.
+
+   THE BREAKPOINT IS ONE NUMBER, STATED ONCE PER SIDE. It used to be written
+   as `max-width:900px` for the collapsed shape and `min-width:901px` for the
+   rail, which leaves the half-open interval (900px, 901px) matching NEITHER —
+   and a fractional CSS viewport is not exotic, it is what browser zoom
+   produces (a 991px window at 110% is 900.909px). In that gap the summary
+   kept `display:none` from the base rule while docs.html's own
+   `matchMedia('(min-width: 901px)')` read false and closed the <details>, so
+   the rail rendered as an empty box with the disclosure chevron — the only
+   control that could have reopened it — not drawn at all. Both sides now key
+   off 900px, `min-width:900px` / `max-width:899.98px`, which tile the line
+   with no hole, and docs.html's matchMedia string is the same 900px.
+
+   THE SHELL IS NOT A CENTRED WRAPPER ON DESKTOP. `.docs-shell` is also a
+   `.wrap`, so the rail used to start 136px in from the left of a 1440px
+   viewport and read as floating. Above the breakpoint the wrapper is undone
+   (max-width:none, margin:0) and the column is stated as padding instead, so
+   the document's left edge, the status strip's and the footer's are one line
+   at `--rail-w + --doc-gap` and the rail owns everything to the left of it. */
+.docs-shell{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;padding-block:16px 56px}
+@media(min-width:900px){
+  .wrap.docs-shell{
+    display:block;max-width:none;margin:0;padding-block:32px 76px;
+    padding-left:calc(var(--rail-w) + var(--doc-gap));padding-right:var(--doc-gap);
+  }
+  .status-strip .wrap,.site-footer .wrap{
+    max-width:none;margin:0;
+    padding-left:calc(var(--rail-w) + var(--doc-gap));padding-right:var(--doc-gap);
+  }
+}
 
 /* ── The chapter rail ────────────────────────────────────────────────────
    ONE list, two shapes.
 
-   ≥901px it is a sticky rail: four named groups, every chapter numbered
-   01–12, and a head that states the extent ("12 chapters"). The numbering is
-   the point — it makes the SHAPE of the documentation legible at a glance
-   (where you are, how much is behind you, how much is left) instead of
-   presenting twelve equal-weight links.
+   ≥900px it is a rail PINNED TO THE VIEWPORT'S LEFT EDGE — position:fixed,
+   left:0, from directly under the header to the bottom of the screen. Not
+   sticky-inside-a-centred-wrapper, which is what it was: at 1440 that put its
+   left edge at x=136 and made a navigation rail read as a floating card that
+   drifted with the page. Fixed means it does not move at all while the
+   document scrolls, and flush-left means the eye has one edge to return to.
+   It keeps athar's own treatment inside — four named groups, every chapter
+   numbered 01–12, a head that states the extent ("12 chapters"), the amber
+   active row. The numbering is the point: it makes the SHAPE of the
+   documentation legible at a glance (where you are, how much is behind you,
+   how much is left) instead of presenting twelve equal-weight links.
 
-   ≤900px the same list collapses into a single 52px disclosure bar that
+   <900px the same list collapses into a single 52px disclosure bar that
    states the chapter you are on and its position ("03 / 12 · Self-hosting").
    The rail used to be 698px tall at 390px — identical to desktop — so a
    phone reader scrolled an entire desktop navigation rail before reaching a
@@ -209,9 +249,29 @@ svg{display:block}
 .toc-bar .toc-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
 .toc-bar .toc-kicker{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--t3);font-weight:600}
 .toc-bar .toc-now{font-size:15px;font-weight:650;color:var(--t1);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.toc-bar .toc-chev{width:18px;height:18px;flex:none;color:var(--t3);transition:transform var(--base) var(--ease)}
+/* ── The disclosure indicator ────────────────────────────────────────────
+   The chevron is the whole of this control's affordance, so it is drawn as a
+   control: a 36px well with the same border and radius vocabulary as .iconbtn
+   in the header, rather than an 18px hairline floating in the bar's right-hand
+   whitespace. The glyph keeps its explicit `fill="none" stroke="currentColor"`
+   presentation attributes (an SVG chevron that states neither fills black and
+   renders as a solid triangle) and is stated at stroke-width 2 — the width
+   every other line icon on this page uses; it was alone at 2.2. The rotation
+   names its own origin: a bare `rotate(180deg)` inherits 50% 50% from the
+   initial value today, but the moment anything sets transform-origin higher up
+   the chevron pivots off-centre, and this is one declaration to prevent it. */
+.toc-bar .toc-ind{
+  display:grid;place-items:center;flex:none;width:36px;height:36px;
+  border-radius:11px;border:1px solid var(--line);background:var(--bg-2);color:var(--t2);
+  transition:color var(--quick) var(--ease),border-color var(--quick) var(--ease);
+}
+.toc-bar .toc-chev{
+  width:19px;height:19px;flex:none;
+  transform-origin:50% 50%;transition:transform var(--base) var(--ease);
+}
 .toc[open] .toc-bar .toc-chev{transform:rotate(180deg)}
 .toc-bar:hover{background:var(--panel-2)}
+.toc-bar:hover .toc-ind{color:var(--t1);border-color:var(--line-2)}
 .rail-head{
   display:flex;align-items:baseline;justify-content:space-between;gap:10px;
   margin:0;padding:13px 14px;border-bottom:1px solid var(--line);
@@ -233,13 +293,37 @@ svg{display:block}
 .docs-nav a.active{background:var(--amber-wash);color:var(--amber-ink);font-weight:650;box-shadow:inset 2px 0 0 0 var(--amber)}
 .docs-nav a.active .ix{color:var(--amber-ink)}
 
-@media(min-width:901px){
-  .docs-rail{position:sticky;top:76px;max-height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain}
+@media(min-width:900px){
+  /* Pinned, not sticky. `bottom:0` rather than a max-height keeps the rail
+     exactly as tall as the screen below the header at every viewport height,
+     so the list scrolls inside itself and the page never scrolls it away. */
+  .docs-rail{
+    position:fixed;left:0;top:var(--hdr-h);bottom:0;width:var(--rail-w);z-index:44;
+    overflow-y:auto;overscroll-behavior:contain;
+    background:var(--bg-2);border-right:1px solid var(--line);
+    padding-bottom:32px;
+    scrollbar-width:thin;scrollbar-color:var(--line-2) transparent;
+  }
+  .docs-rail::-webkit-scrollbar{width:9px}
+  .docs-rail::-webkit-scrollbar-track{background:transparent}
+  .docs-rail::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:9px}
+  /* Flush to an edge, the card treatment is wrong: no second border a pixel
+     inside the rail's own, no radius against a straight viewport edge. */
+  .toc{border:0;border-radius:0;background:transparent}
+  .rail-head{position:sticky;top:0;z-index:1;background:var(--bg-2);padding:17px 22px 13px}
+  .docs-nav{padding:10px 14px 0 16px}
 }
-@media(max-width:900px){
+@media(max-width:899.98px){
   .rail-head{display:none}
   .docs-rail{position:sticky;top:64px;z-index:40}
-  .toc{background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(12px) saturate(1.2);box-shadow:0 6px 20px -14px rgba(0,0,0,.6)}
+  /* OPAQUE. This bar was `color-mix(... 94%, transparent)` over a
+     `backdrop-filter:blur(12px)`, and 6% of a blurred document is not a
+     texture — at 390 and at 768, in both themes, whole words of prose were
+     legible THROUGH the bar and straight through the chevron as the page
+     scrolled under it. A sticky navigation bar has to be a surface. Dropping
+     backdrop-filter also drops its side effect: an element with one becomes
+     the containing block for fixed-position descendants. */
+  .toc{background:var(--panel);box-shadow:0 10px 26px -18px rgba(0,0,0,.75)}
   .toc-bar{display:flex}
   /* Even opened, the list never becomes a 698px wall again: it is a panel
      with its own scroll, capped well short of the viewport. */

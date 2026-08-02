@@ -78,12 +78,19 @@ document.documentElement.setAttribute('data-theme',s==='light'||s==='dark'?s:(ma
          on narrow viewports, on selecting a chapter, and on crossing the
          breakpoint. -->
     <details class="toc" id="toc" open>
-      <summary class="toc-bar" aria-label="Table of contents">
+      <summary class="toc-bar">
         <span class="toc-txt">
           <span class="toc-kicker" id="tocPos">Contents · 01 / 12</span>
           <span class="toc-now" id="tocNow">Getting started</span>
         </span>
-        <svg class="toc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        <!-- No aria-label on the <summary>: one would REPLACE its accessible
+             name, and its name is the two lines above — the chapter you are on
+             and where it sits in the run. The chevron is decoration on top of
+             that, so it is aria-hidden and unfocusable; <details>/<summary>
+             already carries the expanded/collapsed state natively. -->
+        <span class="toc-ind" aria-hidden="true">
+          <svg class="toc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+        </span>
       </summary>
       <div class="toc-nav">
         <p class="rail-head">Documentation <span>12 chapters</span></p>
