@@ -39,6 +39,23 @@ function csrfToken() {
 export const SESSION_EXPIRED = 'athar:session-expired'
 
 /**
+ * Pulls a string `error` field out of a decoded JSON body, if there is one —
+ * without assuming the body has any particular shape. res.json() is typed
+ * `Promise<any>`, and the server error contract ({ error: string }) is only a
+ * convention, not something worth casting our way past the type checker for.
+ * @param {unknown} payload
+ * @param {string} fallback
+ * @returns {string}
+ */
+function errorMessage(payload, fallback) {
+  if (payload && typeof payload === 'object' && 'error' in payload) {
+    const err = /** @type {{ error?: unknown }} */ (payload).error
+    if (typeof err === 'string') return err
+  }
+  return fallback
+}
+
+/**
  * @param {string} method
  * @param {string} path
  * @param {unknown} [body]
@@ -67,6 +84,7 @@ async function request(method, path, body) {
 
   if (res.status === 204) return null
 
+  /** @type {unknown} */
   let payload = null
   try {
     payload = await res.json()
@@ -80,7 +98,7 @@ async function request(method, path, body) {
     if (res.status === 401 && !path.startsWith('/api/auth/')) {
       window.dispatchEvent(new CustomEvent(SESSION_EXPIRED))
     }
-    throw new ApiError(res.status, (payload && payload.error) || `request failed (${res.status})`)
+    throw new ApiError(res.status, errorMessage(payload, `request failed (${res.status})`))
   }
   return payload
 }
@@ -120,6 +138,7 @@ async function putBytes(path, blob, contentType) {
   } catch {
     throw new ApiError(0, 'could not reach the Athar server')
   }
+  /** @type {unknown} */
   let payload = null
   try {
     payload = await res.json()
@@ -128,7 +147,7 @@ async function putBytes(path, blob, contentType) {
   }
   if (!res.ok) {
     if (res.status === 401) window.dispatchEvent(new CustomEvent(SESSION_EXPIRED))
-    throw new ApiError(res.status, (payload && payload.error) || `upload failed (${res.status})`)
+    throw new ApiError(res.status, errorMessage(payload, `upload failed (${res.status})`))
   }
   return payload
 }
