@@ -8,6 +8,7 @@
  * "KE" maps to 🇰🇪 with two character-code additions and no asset request.
  */
 
+/** @type {Intl.DisplayNames | null} */
 let displayNames = null
 try {
   displayNames = new Intl.DisplayNames(undefined, { type: 'region' })
@@ -16,7 +17,11 @@ try {
   // to showing the raw code, which is still meaningful.
 }
 
-/** Turns an ISO 3166-1 alpha-2 code into a readable country name. */
+/**
+ * Turns an ISO 3166-1 alpha-2 code into a readable country name.
+ * @param {string | null | undefined} code
+ * @returns {string}
+ */
 export function countryName(code) {
   if (!code || code.length !== 2) return code || 'Unknown'
   try {
@@ -26,7 +31,11 @@ export function countryName(code) {
   }
 }
 
-/** Turns an ISO 3166-1 alpha-2 code into its flag emoji. */
+/**
+ * Turns an ISO 3166-1 alpha-2 code into its flag emoji.
+ * @param {string | null | undefined} code
+ * @returns {string}
+ */
 export function flagEmoji(code) {
   if (!code || code.length !== 2) return '🏳️'
 
