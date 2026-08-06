@@ -8,37 +8,51 @@
  * nothing rendered here can execute as HTML.
  */
 
+/** @typedef {Record<string, string | boolean | ((event: Event) => void) | null | undefined>} ElAttrs */
+/** @typedef {ElChildLeaf | ElChildLeaf[]} ElChild */
+/** @typedef {Node | string | number | boolean | null | undefined} ElChildLeaf */
+
 /**
  * el('div', {class: 'foo', onclick: fn}, child1, child2, ...)
  *
  * Attribute values of `null`/`undefined` are skipped. A key starting with
  * "on" whose value is a function is wired as an event listener instead of an
  * attribute (`onclick` -> a real `click` listener, not an onclick="" string).
+ * @param {string} tag
+ * @param {ElAttrs} [attrs]
+ * @param {...ElChild} children
+ * @returns {HTMLElement}
  */
-export function el(tag, attrs) {
+export function el(tag, attrs, ...children) {
   const node = document.createElement(tag)
   if (attrs) {
     for (const key of Object.keys(attrs)) {
       const value = attrs[key]
       if (value === null || value === undefined) continue
-      if (key === 'class') node.className = value
-      else if (key === 'for') node.setAttribute('for', value)
+      if (key === 'class') node.className = String(value)
+      else if (key === 'for') node.setAttribute('for', String(value))
       else if (key.startsWith('on') && typeof value === 'function') {
         node.addEventListener(key.slice(2), value)
       } else if (typeof value === 'boolean') {
         if (value) node.setAttribute(key, '')
       } else {
-        node.setAttribute(key, value)
+        node.setAttribute(key, String(value))
       }
     }
   }
-  for (let i = 2; i < arguments.length; i++) append(node, arguments[i])
+  for (const child of children) append(node, child)
   return node
 }
 
-/** svgEl builds an element in the SVG namespace — el() cannot, since
- * document.createElement always makes an (X)HTML element. */
-export function svgEl(tag, attrs) {
+/**
+ * svgEl builds an element in the SVG namespace — el() cannot, since
+ * document.createElement always makes an (X)HTML element.
+ * @param {string} tag
+ * @param {Record<string, string | null | undefined>} [attrs]
+ * @param {...ElChild} children
+ * @returns {SVGElement}
+ */
+export function svgEl(tag, attrs, ...children) {
   const node = document.createElementNS('http://www.w3.org/2000/svg', tag)
   if (attrs) {
     for (const key of Object.keys(attrs)) {
@@ -47,23 +61,32 @@ export function svgEl(tag, attrs) {
       node.setAttribute(key, value)
     }
   }
-  for (let i = 2; i < arguments.length; i++) append(node, arguments[i])
+  for (const child of children) append(node, child)
   return node
 }
 
+/**
+ * @param {Node} node
+ * @param {ElChild} child
+ */
 export function append(node, child) {
   if (child === null || child === undefined || child === false) return
   if (Array.isArray(child)) {
     for (const c of child) append(node, c)
     return
   }
-  node.appendChild(child.nodeType ? child : document.createTextNode(String(child)))
+  node.appendChild(/** @type {Node} */ (child).nodeType ? /** @type {Node} */ (child) : document.createTextNode(String(child)))
 }
 
+/** @param {Node} node */
 export function clear(node) {
   while (node.firstChild) node.removeChild(node.firstChild)
 }
 
+/**
+ * @param {Node} node
+ * @param {...ElChild} children
+ */
 export function replace(node, ...children) {
   clear(node)
   for (const c of children) append(node, c)
