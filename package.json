@@ -11,6 +11,7 @@
     "build:binary": "node scripts/build-binary.mjs",
     "build": "npm run build:tracker && npm run build:binary",
     "test": "node --test scripts/jstest/*.test.mjs",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit -p backend/internal/tracker/tsconfig.json",
     "typecheck:webui": "tsc -p backend/internal/webui/static/tsconfig.json",
     "screenshots": "node scripts/screenshots.mjs",
@@ -19,6 +20,7 @@
     "demo:pages": "node scripts/demo-capture.mjs --measure"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "esbuild": "^0.28.0",
     "eslint": "^10.8.0",
     "globals": "^17.9.0",
