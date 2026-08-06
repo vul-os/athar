@@ -9,9 +9,15 @@
  * follow.
  */
 
+/** @typedef {'light' | 'dark' | 'system'} Preference */
+/** @typedef {'light' | 'dark'} Resolved */
+
 export const STORAGE_KEY = 'athar-theme'
 
-/** Reads the stored preference, tolerating a missing or blocked localStorage. */
+/**
+ * Reads the stored preference, tolerating a missing or blocked localStorage.
+ * @returns {Preference}
+ */
 export function storedPreference() {
   try {
     const value = localStorage.getItem(STORAGE_KEY)
@@ -22,6 +28,7 @@ export function storedPreference() {
   return 'system'
 }
 
+/** @param {Preference} preference */
 export function persistPreference(preference) {
   try {
     localStorage.setItem(STORAGE_KEY, preference)
@@ -34,12 +41,18 @@ function darkQuery() {
   return window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null
 }
 
+/** @returns {Resolved} */
 function systemTheme() {
   const q = darkQuery()
   return q && q.matches ? 'dark' : 'light'
 }
 
-/** Resolves a preference plus the current system theme to the applied theme. */
+/**
+ * Resolves a preference plus the current system theme to the applied theme.
+ * @param {Preference} preference
+ * @param {Resolved} system
+ * @returns {Resolved}
+ */
 export function resolveTheme(preference, system) {
   return preference === 'system' ? system : preference
 }
@@ -89,7 +102,11 @@ export function createThemeController() {
       persistPreference(preference)
       apply()
     },
-    /** Subscribes to every resolved-theme change; returns an unsubscribe fn. */
+    /**
+     * Subscribes to every resolved-theme change; returns an unsubscribe fn.
+     * @param {(resolved: Resolved, preference: Preference) => void} fn
+     * @returns {() => void}
+     */
     onChange(fn) {
       listeners.add(fn)
       return () => listeners.delete(fn)
