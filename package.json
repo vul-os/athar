@@ -4,13 +4,15 @@
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "type": "module",
-  "description": "npm exists here for exactly two things: minifying the tracker script (esbuild) and driving Playwright for screenshots/tests. The dashboard itself is hand-written HTML/CSS/JS embedded straight into the Go binary (backend/internal/webui) \u2014 `go build ./...` alone produces a working server with a working dashboard, no Node involved.",
+  "description": "npm exists here for exactly two things: minifying the tracker script (esbuild) and driving Playwright for screenshots/tests. The dashboard itself is hand-written HTML/CSS/JS embedded straight into the Go binary (backend/internal/webui) — `go build ./...` alone produces a working server with a working dashboard, no Node involved.",
   "scripts": {
     "dev:backend": "go run ./backend/cmd/athar",
     "build:tracker": "node scripts/build-tracker.mjs",
     "build:binary": "node scripts/build-binary.mjs",
     "build": "npm run build:tracker && npm run build:binary",
     "test": "node --test scripts/jstest/*.test.mjs",
+    "typecheck": "tsc --noEmit -p backend/internal/tracker/tsconfig.json",
+    "typecheck:webui": "tsc -p backend/internal/webui/static/tsconfig.json",
     "screenshots": "node scripts/screenshots.mjs",
     "screenshots:site": "node scripts/site-screenshots.mjs",
     "check:site": "node scripts/site-check.mjs",
@@ -18,6 +20,7 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.0",
-    "playwright": "^1.52.0"
+    "playwright": "^1.52.0",
+    "typescript": "6.0.3"
   }
 }
