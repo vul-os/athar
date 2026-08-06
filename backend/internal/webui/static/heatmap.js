@@ -114,7 +114,7 @@ const VIEWPORT_BUCKET_PX = 150
 
 /**
  * @param {HTMLElement} container
- * @param {{ api: import('./api.js').api, websiteId: string, range: import('./api.js').DateRange, canWrite?: boolean }} args
+ * @param {{ api: typeof import('./api.js').api, websiteId: string, range: import('./api.js').DateRange, canWrite?: boolean }} args
  */
 export function renderHeatmapSection(container, { api, websiteId, range, canWrite = false }) {
   /** @type {HeatKind} */
@@ -632,7 +632,7 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
 /**
  * @param {HTMLElement} slot
  * @param {{
- *   api: import('./api.js').api,
+ *   api: typeof import('./api.js').api,
  *   websiteId: string,
  *   canWrite: boolean,
  *   path: string,

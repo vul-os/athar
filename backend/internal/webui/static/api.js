@@ -232,14 +232,16 @@ export const api = {
   /**
    * @param {string} id
    * @param {string} path
-   * @param {string} viewport
+   * @param {number} viewport CSS pixel width the capture was taken at —
+   *   PageImage.viewport_w and every caller pass the number straight through;
+   *   qs() stringifies it for the query string.
    */
   pageImageURL: (id, path, viewport) =>
     `/api/websites/${id}/page-image${qs({ path, viewport })}`,
   /**
    * @param {string} id
    * @param {string} path
-   * @param {string} viewport
+   * @param {number} viewport
    * @param {File} file
    */
   putPageImage: (id, path, viewport, file) =>
@@ -247,7 +249,7 @@ export const api = {
   /**
    * @param {string} id
    * @param {string} path
-   * @param {string} viewport
+   * @param {number} viewport
    */
   deletePageImage: (id, path, viewport) =>
     del(`/api/websites/${id}/page-image${qs({ path, viewport })}`),
