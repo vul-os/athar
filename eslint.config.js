@@ -50,6 +50,19 @@ export default defineConfig([
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      // hookHistory's one finding: `window.history[method]` is captured
+      // into `original` and later invoked as `original.apply(this, ...)` in
+      // the returned wrapper — a deliberate "torn off, rebind at call time"
+      // idiom, not a forgotten-bind bug. The rule flags any method
+      // reference that isn't immediately invoked as a member expression and
+      // has no way to see that .apply(this, ...) restores the right `this`
+      // a few lines down. Single hit in this file (confirmed via `npx
+      // eslint . | grep unbound-method`); downgraded to warn here rather
+      // than disabled inline, per fleet convention for a single measured
+      // false positive.
+      '@typescript-eslint/unbound-method': 'warn',
+    },
   },
 
   // The dashboard's plain-JS-with-JSDoc static files. Same mechanism as

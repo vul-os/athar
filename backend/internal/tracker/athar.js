@@ -28,48 +28,49 @@
  */
 (function (window, document) {
     'use strict';
-    var script = document.currentScript;
+    const script = document.currentScript;
     if (!script)
         return;
-    var attr = function (name, fallback) {
-        // `script` is narrowed non-null above; TS doesn't carry that narrowing
-        // into nested function bodies, so a non-null assertion stands in for a
-        // check that already happened.
-        var v = script.getAttribute('data-' + name);
+    const attr = function (name, fallback) {
+        // `script` was reassigned above from `var` to `const` while adding this
+        // repo's first lint pass — TypeScript narrows a never-reassigned const
+        // across nested function bodies, so the non-null check on line 43 now
+        // carries in here without an assertion (it didn't with `var`).
+        const v = script.getAttribute('data-' + name);
         return v === null ? fallback : v;
     };
-    var flag = function (name) {
+    const flag = function (name) {
         return attr(name, 'false') === 'true';
     };
-    var websiteId = attr('website-id', '');
+    const websiteId = attr('website-id', '');
     if (!websiteId)
         return;
     // Default the collector to wherever this script is served from, so a single
     // script tag is the whole integration.
-    var hostUrl = attr('host-url', '') || new URL(script.src, location.href).origin;
-    var endpoint = hostUrl.replace(/\/+$/, '') + '/api/send';
-    var autoTrack = attr('auto-track', 'true') !== 'false';
-    var heatmapOn = flag('heatmap');
-    var excludeSearch = flag('exclude-search');
-    var domains = attr('domains', '')
+    const hostUrl = attr('host-url', '') || new URL(script.src, location.href).origin;
+    const endpoint = hostUrl.replace(/\/+$/, '') + '/api/send';
+    const autoTrack = attr('auto-track', 'true') !== 'false';
+    const heatmapOn = flag('heatmap');
+    const excludeSearch = flag('exclude-search');
+    const domains = attr('domains', '')
         .split(',')
         .map(function (d) { return d.trim(); })
         .filter(Boolean);
     if (flag('do-not-track')) {
-        var dnt = window.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack;
+        const dnt = window.doNotTrack || navigator.doNotTrack || navigator.msDoNotTrack;
         if (dnt === '1' || dnt === 1 || dnt === 'yes')
             return;
     }
     if (domains.length && domains.indexOf(location.hostname) === -1)
         return;
-    var screenSize = window.screen.width + 'x' + window.screen.height;
-    var language = navigator.language || '';
+    const screenSize = window.screen.width + 'x' + window.screen.height;
+    const language = navigator.language || '';
     function currentUrl() {
-        var path = location.pathname;
+        const path = location.pathname;
         return excludeSearch ? path : path + location.search;
     }
     function send(type, body) {
-        var data = JSON.stringify({ type: type, payload: body });
+        const data = JSON.stringify({ type: type, payload: body });
         // sendBeacon survives the page unloading, which is exactly when the last
         // (and most interesting) samples are flushed. fetch is the fallback.
         if (navigator.sendBeacon) {
@@ -88,7 +89,7 @@
         }).catch(function () { });
     }
     function base(extra) {
-        var body = {
+        const body = {
             website: websiteId,
             hostname: location.hostname,
             screen: screenSize,
@@ -98,7 +99,7 @@
             title: document.title
         };
         if (extra)
-            for (var k in extra)
+            for (const k in extra)
                 body[k] = extra[k];
         return body;
     }
@@ -124,9 +125,9 @@
         }));
     }
     // ── Automatic pageviews, including client-side routing ────────────────────
-    var lastUrl = '';
+    let lastUrl = '';
     function pageview() {
-        var url = currentUrl();
+        const url = currentUrl();
         if (url === lastUrl)
             return; // a replaced state is not a new pageview
         lastUrl = url;
@@ -135,40 +136,46 @@
         send('event', base());
     }
     function hookHistory(method) {
-        var original = window.history[method];
+        // Extracted so it can be forwarded via .apply(this, ...) below — the
+        // rule can't see that .apply(this, ...) explicitly rebinds `this` to
+        // the real History object every call, which is why this is fine
+        // despite being "torn off" here. See the eslint.config.js override for
+        // this file.
+        const original = window.history[method];
         if (typeof original !== 'function')
             return;
-        window.history[method] = function () {
+        window.history[method] = function (...args) {
             // pushState/replaceState take a fixed 3-arg tuple in lib.dom's types,
             // but this wrapper genuinely forwards whatever the caller passed
             // (including callers that rely on the loose 2-arg pre-standard form),
-            // so `arguments` is cast rather than re-typed as that exact tuple.
-            var result = original.apply(this, arguments);
+            // so the rest-params array is cast rather than re-typed as that exact
+            // tuple.
+            const result = original.apply(this, args);
             // Defer so the framework's own router runs first and location is settled.
             setTimeout(pageview, 0);
             return result;
         };
     }
-    var heat = [];
-    var maxScroll = 0;
-    var attnStart = Date.now();
-    var attnBand = -1;
+    let heat = [];
+    let maxScroll = 0;
+    let attnStart = Date.now();
+    let attnBand = -1;
     function docHeight() {
-        var b = document.body, e = document.documentElement;
+        const b = document.body, e = document.documentElement;
         return Math.max(b.scrollHeight, b.offsetHeight, e.clientHeight, e.scrollHeight, e.offsetHeight) || 1;
     }
     // selectorFor builds a short, stable-ish path to an element. It stops at the
     // first id, prefers a single class, and caps depth — a full path would be
     // both enormous and more brittle, not less.
     function selectorFor(el) {
-        var parts = [];
-        for (var i = 0; el && el.nodeType === 1 && i < 5; i++) {
+        const parts = [];
+        for (let i = 0; el && el.nodeType === 1 && i < 5; i++) {
             if (el.id) {
                 parts.unshift('#' + el.id);
                 break;
             }
-            var part = el.nodeName.toLowerCase();
-            var cls = (el.getAttribute('class') || '').trim().split(/\s+/)[0];
+            let part = el.nodeName.toLowerCase();
+            const cls = (el.getAttribute('class') || '').trim().split(/\s+/)[0];
             if (cls)
                 part += '.' + cls;
             parts.unshift(part);
@@ -185,12 +192,12 @@
     function flushHeat() {
         if (!heat.length)
             return;
-        var batch = heat;
+        const batch = heat;
         heat = [];
         send('heat', base({ heat: batch }));
     }
     function onClick(e) {
-        var h = docHeight();
+        const h = docHeight();
         pushHeat({
             k: 'click',
             x: ((e.pageX || 0) / (document.documentElement.scrollWidth || 1)) * 100,
@@ -203,20 +210,20 @@
         });
     }
     function scrollPct() {
-        var h = docHeight();
-        var seen = (window.scrollY || window.pageYOffset || 0) + window.innerHeight;
+        const h = docHeight();
+        const seen = (window.scrollY || window.pageYOffset || 0) + window.innerHeight;
         return Math.min(100, (seen / h) * 100);
     }
     function onScroll() {
-        var pct = scrollPct();
+        const pct = scrollPct();
         if (pct > maxScroll)
             maxScroll = pct;
         // Attention is measured per 10% band: when the visitor moves to a new band,
         // close the previous one with the time spent there.
-        var band = Math.floor(pct / 10);
+        const band = Math.floor(pct / 10);
         if (band !== attnBand) {
             if (attnBand >= 0) {
-                var dwell = Date.now() - attnStart;
+                const dwell = Date.now() - attnStart;
                 if (dwell > 250) {
                     pushHeat({ k: 'attn', s: attnBand * 10, d: dwell, vw: window.innerWidth, vh: window.innerHeight });
                 }
@@ -231,7 +238,7 @@
             maxScroll = 0;
         }
         if (attnBand >= 0) {
-            var dwell = Date.now() - attnStart;
+            const dwell = Date.now() - attnStart;
             if (dwell > 250) {
                 pushHeat({ k: 'attn', s: attnBand * 10, d: dwell, vw: window.innerWidth, vh: window.innerHeight });
             }
