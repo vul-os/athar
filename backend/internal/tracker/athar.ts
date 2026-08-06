@@ -42,16 +42,16 @@ interface Window {
   var script = document.currentScript as HTMLScriptElement | null;
   if (!script) return;
 
-  function attr(name: string, fallback: string): string {
+  var attr = function (name: string, fallback: string): string {
     // `script` is narrowed non-null above; TS doesn't carry that narrowing
     // into nested function bodies, so a non-null assertion stands in for a
     // check that already happened.
     var v = script!.getAttribute('data-' + name);
     return v === null ? fallback : v;
-  }
-  function flag(name: string): boolean {
+  };
+  var flag = function (name: string): boolean {
     return attr(name, 'false') === 'true';
-  }
+  };
 
   var websiteId = attr('website-id', '');
   if (!websiteId) return;
