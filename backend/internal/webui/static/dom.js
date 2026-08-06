@@ -19,7 +19,7 @@
  * "on" whose value is a function is wired as an event listener instead of an
  * attribute (`onclick` -> a real `click` listener, not an onclick="" string).
  * @param {string} tag
- * @param {ElAttrs} [attrs]
+ * @param {ElAttrs | null} [attrs]
  * @param {...ElChild} children
  * @returns {HTMLElement}
  */
@@ -44,11 +44,17 @@ export function el(tag, attrs, ...children) {
   return node
 }
 
+/** @typedef {Record<string, string | number | null | undefined>} SvgAttrs */
+
 /**
  * svgEl builds an element in the SVG namespace — el() cannot, since
  * document.createElement always makes an (X)HTML element.
+ *
+ * Attribute values may be numbers as well as strings — SVG geometry
+ * attributes (x1, y1, r, ...) are routinely set that way, and
+ * setAttribute() coerces exactly like the DOM does natively.
  * @param {string} tag
- * @param {Record<string, string | null | undefined>} [attrs]
+ * @param {SvgAttrs | null} [attrs]
  * @param {...ElChild} children
  * @returns {SVGElement}
  */
@@ -58,7 +64,7 @@ export function svgEl(tag, attrs, ...children) {
     for (const key of Object.keys(attrs)) {
       const value = attrs[key]
       if (value === null || value === undefined) continue
-      node.setAttribute(key, value)
+      node.setAttribute(key, String(value))
     }
   }
   for (const child of children) append(node, child)
