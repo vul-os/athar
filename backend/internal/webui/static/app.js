@@ -123,7 +123,10 @@ function paint() {
   root.appendChild(renderDashboard())
 }
 
-boot()
+// Top-level bootstrap: nothing awaits this, its own async body handles its
+// failure paths (see the boot === 'error' render branch above), so the
+// dropped promise is intentional.
+void boot()
 
 // ── Login / bootstrap ────────────────────────────────────────────────────────
 // Port of Login.jsx: which mode this is in comes from the server
@@ -159,7 +162,8 @@ function renderLogin(needsSetup, onSignedIn) {
     submitBtn,
   )
 
-  form.addEventListener('submit', async (e) => {
+  /** @param {SubmitEvent} e */
+  async function handleSubmit(e) {
     e.preventDefault()
     errorBox.style.display = 'none'
 
@@ -186,6 +190,13 @@ function renderLogin(needsSetup, onSignedIn) {
       submitBtn.disabled = false
       submitBtn.textContent = needsSetup ? 'Create account' : 'Sign in'
     }
+  }
+  // addEventListener's listener type returns void; wrapping in a sync
+  // function and voiding the inner call (rather than passing handleSubmit
+  // directly) makes the dropped promise explicit instead of silently
+  // structurally-typed away.
+  form.addEventListener('submit', (e) => {
+    void handleSubmit(e)
   })
 
   return el(
@@ -310,20 +321,26 @@ function renderDashboard() {
   theme.onChange(() => updateThemeButton(themeBtn))
   topbarInner.appendChild(themeBtn)
 
+  async function signOut() {
+    try {
+      await api.logout()
+    } catch {
+      // Sign-out proceeds locally regardless of the network round trip.
+    }
+    state = { boot: 'signed-out', needsSetup: false }
+    paint()
+  }
   const signOutBtn = el(
     'button',
     {
       type: 'button',
       class: 'btn btn-ghost',
       title: `Signed in as ${s.user.username}`,
-      onclick: async () => {
-        try {
-          await api.logout()
-        } catch {
-          // Sign-out proceeds locally regardless of the network round trip.
-        }
-        state = { boot: 'signed-out', needsSetup: false }
-        paint()
+      // ElAttrs' onclick type is `(event: Event) => void`; voiding the call
+      // inside a sync wrapper keeps that honest instead of relying on TS's
+      // void-return callback compatibility to paper over the dropped promise.
+      onclick: () => {
+        void signOut()
       },
     },
     'Sign out',
@@ -436,7 +453,7 @@ function mountActiveVisitors(slot, websiteId) {
   /** @type {ReturnType<typeof setInterval> | null} */
   let timer = null
 
-  async function poll() {
+  async function doPoll() {
     if (document.visibilityState !== 'visible') return
     try {
       const res = /** @type {ActiveResponse} */ (await api.active(websiteId))
@@ -450,6 +467,13 @@ function mountActiveVisitors(slot, websiteId) {
     } catch {
       // Transient failures are not worth surfacing on a realtime badge.
     }
+  }
+  // Sync wrapper: setInterval's handler type is permissive enough to take
+  // doPoll directly, but addEventListener/removeEventListener both require a
+  // void-returning listener, and the identity passed to add must match what's
+  // passed to remove — so everything below goes through this one wrapper.
+  function poll() {
+    void doPoll()
   }
   poll()
   timer = setInterval(poll, 15000)
@@ -487,7 +511,8 @@ function renderAddWebsite(onCreated) {
     errorBox,
     submitBtn,
   )
-  form.addEventListener('submit', async (e) => {
+  /** @param {SubmitEvent} e */
+  async function handleSubmit(e) {
     e.preventDefault()
     if (busy) return
     busy = true
@@ -504,6 +529,9 @@ function renderAddWebsite(onCreated) {
       submitBtn.disabled = false
       submitBtn.textContent = 'Create website'
     }
+  }
+  form.addEventListener('submit', (e) => {
+    void handleSubmit(e)
   })
 
   return el(
@@ -519,7 +547,7 @@ function renderAddWebsite(onCreated) {
 function renderSnippet(website) {
   const tag = `<script defer src="${window.location.origin}/athar.js" data-website-id="${website.id}"></script>`
   const copyBtn = el('button', { type: 'button', class: 'btn btn-ghost btn-sm' }, 'Copy')
-  copyBtn.addEventListener('click', async () => {
+  async function copySnippet() {
     try {
       await navigator.clipboard.writeText(tag)
       copyBtn.textContent = 'Copied'
@@ -527,6 +555,9 @@ function renderSnippet(website) {
     } catch {
       // Clipboard access can be denied; the snippet is selectable regardless.
     }
+  }
+  copyBtn.addEventListener('click', () => {
+    void copySnippet()
   })
   return el(
     'div',
@@ -583,7 +614,9 @@ function renderOverview(main, website, range) {
   for (const t of tileNodes) statGrid.appendChild(t.node)
   chartBody.appendChild(el('div', { class: 'chart-empty' }, 'Loading…'))
 
-  ;(async () => {
+  // Fire-and-forget: nothing in renderOverview's caller awaits this render,
+  // and the IIFE's own try/catch below is the actual error handling.
+  void (async () => {
     const span = range.to - range.from
     const previousRange = { from: range.from - span, to: range.from }
     try {
@@ -778,7 +811,7 @@ function mountMetricPanel({ websiteId, range, title, tabs, emptyLabel, fixedMetr
               if (metric === t.metric) return
               metric = t.metric
               paintTabs()
-              load()
+              void load()
             },
           },
           t.label,
@@ -828,6 +861,6 @@ function mountMetricPanel({ websiteId, range, title, tabs, emptyLabel, fixedMetr
   }
 
   paintTabs()
-  load()
+  void load()
   return { node }
 }
