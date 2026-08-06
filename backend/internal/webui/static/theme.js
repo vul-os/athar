@@ -68,6 +68,7 @@ export function resolveTheme(preference, system) {
  */
 export function createThemeController() {
   let preference = storedPreference()
+  /** @type {Set<(resolved: Resolved, preference: Preference) => void>} */
   const listeners = new Set()
 
   function apply() {
