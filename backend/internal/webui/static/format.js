@@ -3,19 +3,31 @@
 const compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 })
 const plain = new Intl.NumberFormat()
 
-/** Formats a count: exact below 10k, compact above, where the digits stop mattering. */
+/**
+ * Formats a count: exact below 10k, compact above, where the digits stop mattering.
+ * @param {number | null | undefined} n
+ * @returns {string}
+ */
 export function count(n) {
   if (n === null || n === undefined) return '—'
   return n < 10_000 ? plain.format(n) : compact.format(n)
 }
 
-/** Formats a 0..1 ratio as a whole-number percentage. */
+/**
+ * Formats a 0..1 ratio as a whole-number percentage.
+ * @param {number | null | undefined} ratio
+ * @returns {string}
+ */
 export function percent(ratio) {
   if (ratio === null || ratio === undefined) return '—'
   return `${Math.round(ratio * 100)}%`
 }
 
-/** Formats a duration in seconds as m:ss, or Xs below a minute. */
+/**
+ * Formats a duration in seconds as m:ss, or Xs below a minute.
+ * @param {number | null | undefined} seconds
+ * @returns {string}
+ */
 export function duration(seconds) {
   if (!seconds || seconds < 1) return '0s'
   const s = Math.round(seconds)
@@ -33,6 +45,8 @@ export function duration(seconds) {
  * capture that shows as "412 KB" in the dashboard matches what they saw when
  * they took it. One decimal place from MB up: "1.4 MB" is useful, "1.437 MB"
  * is noise, and "1434 KB" is arithmetic the reader should not have to do.
+ * @param {number | null | undefined} n
+ * @returns {string}
  */
 export function bytes(n) {
   if (n === null || n === undefined) return '—'
@@ -49,6 +63,9 @@ export function bytes(n) {
  *
  * The exponent comes from Intl rather than a hardcoded /100: JPY has no minor
  * unit at all and KWD has three, so dividing by 100 is wrong for both.
+ * @param {number} amountMinor
+ * @param {string} currency
+ * @returns {string}
  */
 export function money(amountMinor, currency) {
   try {
@@ -68,6 +85,10 @@ export function money(amountMinor, currency) {
  * they are pointing at; the short form is for an axis, where labels have to fit
  * next to each other. Deriving both from the interval rather than the caller
  * keeps the axis and the tooltip from disagreeing about what a bucket is.
+ * @param {number} ms
+ * @param {string | undefined} interval
+ * @param {boolean} [full]
+ * @returns {string}
  */
 export function bucketLabel(ms, interval, full = false) {
   const d = new Date(ms)
@@ -83,7 +104,12 @@ export function bucketLabel(ms, interval, full = false) {
     : d.toLocaleTimeString(undefined, { hour: 'numeric' })
 }
 
-/** Formats a signed percentage change, e.g. "+18%" / "−4%". */
+/**
+ * Formats a signed percentage change, e.g. "+18%" / "−4%".
+ * @param {number} current
+ * @param {number | null | undefined} previous
+ * @returns {{ value: number, label: string } | null}
+ */
 export function delta(current, previous) {
   if (!previous) return null
   const change = (current - previous) / previous
@@ -101,6 +127,10 @@ export const RANGES = [
   { key: '90d', label: '90 days', hours: 24 * 90 },
 ]
 
+/**
+ * @param {string} key
+ * @returns {{ from: number, to: number }}
+ */
 export function rangeFor(key) {
   const spec = RANGES.find((r) => r.key === key) ?? DEFAULT_RANGE_SPEC
   const to = Date.now()
@@ -134,7 +164,10 @@ export function storedRangeKey() {
   return DEFAULT_RANGE_KEY
 }
 
-/** Remembers the chosen range, so the default only ever matters once. */
+/**
+ * Remembers the chosen range, so the default only ever matters once.
+ * @param {string} key
+ */
 export function persistRangeKey(key) {
   try {
     localStorage.setItem(RANGE_STORAGE_KEY, key)
