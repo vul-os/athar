@@ -81,7 +81,12 @@ export function append(node, child) {
     for (const c of child) append(node, c)
     return
   }
-  node.appendChild(/** @type {Node} */ (child).nodeType ? /** @type {Node} */ (child) : document.createTextNode(String(child)))
+  // `instanceof Node` (rather than the previous `.nodeType` cast-and-check)
+  // is a real type guard, so TS narrows `child` to Node in the true branch
+  // and to the remaining string | number | boolean leaf types in the false
+  // branch — the latter is what makes String(child) provably safe instead
+  // of merely assumed safe.
+  node.appendChild(child instanceof Node ? child : document.createTextNode(String(child)))
 }
 
 /** @param {Node} node */
