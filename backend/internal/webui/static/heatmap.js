@@ -57,6 +57,50 @@ import { mountHeatCanvas } from './heatcanvas.js'
  * "Schematic", never presented as the page, and a stale image for a different
  * viewport is never substituted for a missing one.
  */
+/** @typedef {'click' | 'scroll' | 'attn'} HeatKind */
+
+/**
+ * A heatmap sample as this view consumes it. The three modes populate
+ * different fields (click: x/y/selector; scroll: scroll; attn: scroll/dwell_ms)
+ * of one shape, matching how the API returns them mixed in one `samples` array.
+ * @typedef {Object} HeatSample
+ * @property {number} [x]
+ * @property {number} [y]
+ * @property {string} [selector]
+ * @property {number} [scroll]
+ * @property {number} [dwell_ms]
+ * @property {number} vw
+ * @property {number} vh
+ */
+
+/** @typedef {{ key: number, label: number, samples: HeatSample[] }} ViewportBucket */
+
+/**
+ * @typedef {Object} PageImage
+ * @property {string} path
+ * @property {number} viewport_w
+ * @property {number} image_w
+ * @property {number} image_h
+ * @property {number} bytes
+ * @property {number} created_at
+ */
+
+/** @typedef {{ images?: PageImage[] } | null} PageImagesResponse */
+/** @typedef {{ rows?: Array<{ value: string, count: number }> } | null} MetricsResponse */
+/** @typedef {{ samples?: HeatSample[] } | null} HeatmapResponse */
+
+/**
+ * A caught value's type is `unknown`, not Error — this narrows it the same
+ * way at every catch site in this file rather than trusting `err.message`
+ * to exist.
+ * @param {unknown} err
+ * @returns {string | undefined}
+ */
+function errorMessage(err) {
+  return err instanceof Error ? err.message : undefined
+}
+
+/** @type {Array<{ kind: HeatKind, label: string, blurb: string }>} */
 const MODES = [
   { kind: 'click', label: 'Clicks', blurb: 'Where visitors pressed, as a density field over the page.' },
   { kind: 'scroll', label: 'Scroll depth', blurb: 'How far down the page each session reached before leaving.' },
@@ -68,19 +112,30 @@ const TOP_ELEMENTS_LIMIT = 8
 /** Widths within this many pixels of each other are one device class. */
 const VIEWPORT_BUCKET_PX = 150
 
+/**
+ * @param {HTMLElement} container
+ * @param {{ api: import('./api.js').api, websiteId: string, range: import('./api.js').DateRange, canWrite?: boolean }} args
+ */
 export function renderHeatmapSection(container, { api, websiteId, range, canWrite = false }) {
+  /** @type {HeatKind} */
   let kind = 'click'
+  /** @type {string | null} */
   let path = null
   // null means "choose for me": the first bucket that has a page capture, else
   // all viewports. An explicit choice by the operator is preserved.
+  /** @type {string | null} */
   let viewportBucket = null
   let gen = 0
+  /** @type {{ destroy(): void } | null} */
   let canvasHandle = null
+  /** @type {PageImage[]} */
   let pageImages = []
 
   const section = el('section', { class: 'panel heatmap' })
   const header = el('header', { class: 'heatmap-header' })
-  const pageSelect = el('select', { class: 'select heatmap-page-select', 'aria-label': 'Page to show heatmap for' })
+  const pageSelect = /** @type {HTMLSelectElement} */ (
+    el('select', { class: 'select heatmap-page-select', 'aria-label': 'Page to show heatmap for' })
+  )
   const modeBar = el('div', { class: 'segmented' })
   header.appendChild(el('h2', { class: 'panel-title' }, 'Heatmaps'))
   header.appendChild(pageSelect)
@@ -124,7 +179,7 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
    */
   async function loadPageImages() {
     try {
-      const data = await api.pageImages(websiteId)
+      const data = /** @type {PageImagesResponse} */ (await api.pageImages(websiteId))
       pageImages = (data && data.images) || []
     } catch {
       // A missing index is not a reason to fail the whole view: the click map
@@ -136,7 +191,7 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
 
   async function loadPages() {
     try {
-      const data = await api.metrics(websiteId, 'path', range, 25)
+      const data = /** @type {MetricsResponse} */ (await api.metrics(websiteId, 'path', range, 25))
       const pages = (data && data.rows) || []
       clear(pageSelect)
       if (pages.length === 0) {
@@ -147,9 +202,9 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
           pageSelect.appendChild(el('option', { value: p.value }, `${p.value}  (${p.count})`))
         }
         if (!path || !pages.some((p) => p.value === path)) path = pages[0].value
-        pageSelect.value = path
+        pageSelect.value = path || ''
       }
-    } catch (err) {
+    } catch {
       path = null
     }
     loadHeat()
@@ -172,11 +227,12 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
     }
     renderState(body, 'loading', 'Loading…')
     try {
-      const data = await api.heatmap(websiteId, path, kind, range)
+      const data = /** @type {HeatmapResponse} */ (await api.heatmap(websiteId, path, kind, range))
       if (myGen !== gen) return
       const samples = (data && data.samples) || []
       if (samples.length === 0) {
         const mode = MODES.find((m) => m.kind === kind)
+        const modeLabel = mode ? mode.label.toLowerCase() : 'data'
         clear(body)
         body.appendChild(
           el(
@@ -185,7 +241,7 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
             el(
               'p',
               null,
-              `No ${mode.label.toLowerCase()} recorded for this page yet. Add `,
+              `No ${modeLabel} recorded for this page yet. Add `,
               el('code', { class: 'mono' }, 'data-heatmap="true"'),
               ' to your script tag.',
             ),
@@ -199,10 +255,15 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
       else renderAttention(body, samples)
     } catch (err) {
       if (myGen !== gen) return
-      renderState(body, 'error', 'Could not load heatmap', err && err.message)
+      renderState(body, 'error', 'Could not load heatmap', errorMessage(err))
     }
   }
 
+  /**
+   * @param {HTMLElement} root
+   * @param {HeatSample[]} allSamples
+   * @param {string} currentPath
+   */
   function renderClickMap(root, allSamples, currentPath) {
     const buckets = bucketizeViewports(allSamples)
     const imagesHere = pageImages.filter((img) => img.path === currentPath)
@@ -255,9 +316,12 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
     // when several were: with page captures it is also the control that chooses
     // which capture you are looking at, so hiding it on a single-viewport site
     // would hide the backdrop switch too.
+    /** @type {HTMLSelectElement | null} */
     let vpSelect = null
     if (buckets.length > 0) {
-      vpSelect = el('select', { class: 'select heat-viewport-select', 'aria-label': 'Recorded viewport width' })
+      vpSelect = /** @type {HTMLSelectElement} */ (
+        el('select', { class: 'select heat-viewport-select', 'aria-label': 'Recorded viewport width' })
+      )
       if (buckets.length > 1) {
         vpSelect.appendChild(el('option', { value: 'all' }, `All viewports (${allSamples.length} samples)`))
       }
@@ -271,9 +335,9 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
           ),
         )
       }
-      vpSelect.value = viewportBucket
+      vpSelect.value = viewportBucket || 'all'
       vpSelect.addEventListener('change', () => {
-        viewportBucket = vpSelect.value
+        viewportBucket = /** @type {HTMLSelectElement} */ (vpSelect).value
         paint()
       })
       const pickerRow = el(
@@ -303,6 +367,7 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
     wrap.appendChild(right)
     root.appendChild(wrap)
 
+    /** @type {ReturnType<typeof mountHeatCanvas> | null} */
     let handle = null
     let imgEl = null
 
@@ -364,7 +429,11 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
 
       if (handle) handle.destroy()
       handle = mountHeatCanvas(canvasLayer)
-      handle.setSamples(samples.filter((s) => typeof s.x === 'number' && typeof s.y === 'number'))
+      handle.setSamples(
+        /** @type {import('./heatcanvas.js').HeatPoint[]} */ (
+          samples.filter((s) => typeof s.x === 'number' && typeof s.y === 'number')
+        ),
+      )
 
       clear(caption)
       if (image) {
@@ -439,11 +508,15 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
     }
   }
 
+  /**
+   * @param {HTMLElement} root
+   * @param {HeatSample[]} samples
+   */
   function renderScrollDepth(root, samples) {
     const total = samples.length || 1
     const bands = Array.from({ length: 10 }, (_, i) => {
       const depth = (i + 1) * 10
-      const reached = samples.filter((s) => s.scroll >= depth - 5).length
+      const reached = samples.filter((s) => (s.scroll || 0) >= depth - 5).length
       return { depth, reached, share: reached / total }
     })
     const foundMedian = bands.find((b) => b.share < 0.5)
@@ -484,11 +557,15 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
     root.appendChild(wrap)
   }
 
+  /**
+   * @param {HTMLElement} root
+   * @param {HeatSample[]} samples
+   */
   function renderAttention(root, samples) {
     const totals = new Array(10).fill(0)
     const counts = new Array(10).fill(0)
     for (const s of samples) {
-      const index = Math.min(9, Math.max(0, Math.floor(s.scroll / 10)))
+      const index = Math.min(9, Math.max(0, Math.floor((s.scroll || 0) / 10)))
       totals[index] += s.dwell_ms || 0
       counts[index] += 1
     }
@@ -552,6 +629,19 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
  * to know, at the moment they do it, that they are choosing what every other
  * dashboard user of this website will see.
  */
+/**
+ * @param {HTMLElement} slot
+ * @param {{
+ *   api: import('./api.js').api,
+ *   websiteId: string,
+ *   canWrite: boolean,
+ *   path: string,
+ *   image: PageImage | null,
+ *   bucket: ViewportBucket | null,
+ *   suggestedWidth: number,
+ *   onChanged: () => Promise<void>,
+ * }} args
+ */
 function renderCapturePanel(slot, { api, websiteId, canWrite, path, image, bucket, suggestedWidth, onChanged }) {
   clear(slot)
   const panel = el('div', { class: 'capture-panel' })
@@ -597,54 +687,60 @@ function renderCapturePanel(slot, { api, websiteId, canWrite, path, image, bucke
   }
 
   const status = el('p', { class: 'capture-feedback' })
-  const widthInput = el('input', {
-    class: 'text-input capture-width',
-    type: 'number',
-    min: '200',
-    max: '8000',
-    step: '1',
-    value: String(image ? image.viewport_w : suggestedWidth || 1440),
-    'aria-label': 'Viewport width the capture was taken at, in CSS pixels',
-  })
-  const fileInput = el('input', {
-    class: 'capture-file',
-    type: 'file',
-    accept: 'image/png,image/jpeg',
-    'aria-label': 'Full-page capture of this page (PNG or JPEG)',
-  })
+  const widthInput = /** @type {HTMLInputElement} */ (
+    el('input', {
+      class: 'text-input capture-width',
+      type: 'number',
+      min: '200',
+      max: '8000',
+      step: '1',
+      value: String(image ? image.viewport_w : suggestedWidth || 1440),
+      'aria-label': 'Viewport width the capture was taken at, in CSS pixels',
+    })
+  )
+  const fileInput = /** @type {HTMLInputElement} */ (
+    el('input', {
+      class: 'capture-file',
+      type: 'file',
+      accept: 'image/png,image/jpeg',
+      'aria-label': 'Full-page capture of this page (PNG or JPEG)',
+    })
+  )
 
-  const uploadBtn = el(
-    'button',
-    {
-      type: 'button',
-      class: 'btn btn-primary btn-sm',
-      onclick: async () => {
-        const file = fileInput.files && fileInput.files[0]
-        if (!file) {
-          status.textContent = 'Choose a PNG or JPEG first.'
-          status.className = 'capture-feedback is-error'
-          return
-        }
-        const vw = Number(widthInput.value)
-        if (!Number.isFinite(vw) || vw < 200 || vw > 8000) {
-          status.textContent = 'Viewport width must be between 200 and 8000 CSS pixels.'
-          status.className = 'capture-feedback is-error'
-          return
-        }
-        uploadBtn.disabled = true
-        status.textContent = 'Uploading…'
-        status.className = 'capture-feedback'
-        try {
-          await api.putPageImage(websiteId, path, vw, file)
-          await onChanged()
-        } catch (err) {
-          uploadBtn.disabled = false
-          status.textContent = (err && err.message) || 'Upload failed.'
-          status.className = 'capture-feedback is-error'
-        }
+  const uploadBtn = /** @type {HTMLButtonElement} */ (
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'btn btn-primary btn-sm',
+        onclick: async () => {
+          const file = fileInput.files && fileInput.files[0]
+          if (!file) {
+            status.textContent = 'Choose a PNG or JPEG first.'
+            status.className = 'capture-feedback is-error'
+            return
+          }
+          const vw = Number(widthInput.value)
+          if (!Number.isFinite(vw) || vw < 200 || vw > 8000) {
+            status.textContent = 'Viewport width must be between 200 and 8000 CSS pixels.'
+            status.className = 'capture-feedback is-error'
+            return
+          }
+          uploadBtn.disabled = true
+          status.textContent = 'Uploading…'
+          status.className = 'capture-feedback'
+          try {
+            await api.putPageImage(websiteId, path, vw, file)
+            await onChanged()
+          } catch (err) {
+            uploadBtn.disabled = false
+            status.textContent = errorMessage(err) || 'Upload failed.'
+            status.className = 'capture-feedback is-error'
+          }
+        },
       },
-    },
-    image ? 'Replace capture' : 'Upload capture',
+      image ? 'Replace capture' : 'Upload capture',
+    )
   )
 
   const row = el('div', { class: 'capture-row' }, fileInput, el('div', { class: 'capture-row-end' }, widthInput, uploadBtn))
@@ -672,7 +768,7 @@ function renderCapturePanel(slot, { api, websiteId, canWrite, path, image, bucke
               await api.deletePageImage(websiteId, path, image.viewport_w)
               await onChanged()
             } catch (err) {
-              status.textContent = (err && err.message) || 'Could not remove the capture.'
+              status.textContent = errorMessage(err) || 'Could not remove the capture.'
               status.className = 'capture-feedback is-error'
             }
           },
@@ -704,6 +800,10 @@ function renderCapturePanel(slot, { api, websiteId, canWrite, path, image, bucke
  * has roughly the viewport's own ratio, and stretching one to fill a frame the
  * samples treat as the whole document would put every below-the-fold click in
  * the wrong place while looking entirely plausible.
+ * @param {PageImage} image
+ * @param {number} meanViewportW
+ * @param {number} meanViewportH
+ * @returns {string | null}
  */
 function checkAlignment(image, meanViewportW, meanViewportH) {
   if (!image.image_w || !image.image_h) return null
@@ -730,7 +830,12 @@ function checkAlignment(image, meanViewportW, meanViewportH) {
   return null
 }
 
-/** Matches a bucket to an image, preferring the capture nearest its widths. */
+/**
+ * Matches a bucket to an image, preferring the capture nearest its widths.
+ * @param {PageImage[]} images
+ * @param {ViewportBucket} bucket
+ * @returns {PageImage | null}
+ */
 function imageForBucket(images, bucket) {
   const inBucket = images.filter((img) => viewportBucketKey(img.viewport_w) === bucket.key)
   if (inBucket.length === 0) return null
@@ -739,6 +844,10 @@ function imageForBucket(images, bucket) {
   )
 }
 
+/**
+ * @param {number | null | undefined} ms
+ * @returns {string}
+ */
 function shortDate(ms) {
   if (!ms) return 'recently'
   try {
@@ -760,6 +869,12 @@ function rampLegend() {
   )
 }
 
+/**
+ * @param {HTMLElement} root
+ * @param {'empty' | 'loading' | 'error'} kindOf
+ * @param {string} title
+ * @param {string} [hint]
+ */
 function renderState(root, kindOf, title, hint) {
   clear(root)
   root.appendChild(
@@ -777,6 +892,8 @@ function renderState(root, kindOf, title, hint) {
  * stored page image is matched to recorded samples through this function and
  * nothing else — so the two sides can never drift into disagreeing about which
  * widths are "the same layout".
+ * @param {number} vw
+ * @returns {number}
  */
 export function viewportBucketKey(vw) {
   return Math.round(vw / VIEWPORT_BUCKET_PX) * VIEWPORT_BUCKET_PX
@@ -791,18 +908,26 @@ export function viewportBucketKey(vw) {
  * rounded key. A picker offering "~1950px" for a population of 1920px screens
  * describes a width nobody has; the key is an implementation detail and stays
  * one.
+ * @param {HeatSample[]} samples
+ * @returns {ViewportBucket[]}
  */
 function bucketizeViewports(samples) {
   const withVw = samples.filter((s) => s.vw > 0)
   if (withVw.length === 0) return []
+  /** @type {Map<number, HeatSample[]>} */
   const groups = new Map()
   for (const s of withVw) {
     const key = viewportBucketKey(s.vw)
-    if (!groups.has(key)) groups.set(key, [])
-    groups.get(key).push(s)
+    let bucket = groups.get(key)
+    if (!bucket) {
+      bucket = []
+      groups.set(key, bucket)
+    }
+    bucket.push(s)
   }
   return [...groups.entries()]
     .map(([key, samplesForKey]) => {
+      /** @type {Map<number, number>} */
       const freq = new Map()
       for (const s of samplesForKey) freq.set(s.vw, (freq.get(s.vw) || 0) + 1)
       let label = key
@@ -823,17 +948,24 @@ function bucketizeViewports(samples) {
  * recorded for that selector — never from an assumed layout. Padded a
  * little so a single-point box is still visible, and capped to the same
  * top-N the "most clicked elements" list shows.
+ * @param {HeatSample[]} samples
+ * @returns {Array<{ selector: string, count: number, x0: number, x1: number, y0: number, y1: number }>}
  */
 function selectorBoxes(samples) {
+  /** @type {Map<string, HeatSample[]>} */
   const bySelector = new Map()
   for (const s of samples) {
     if (!s.selector) continue
-    if (!bySelector.has(s.selector)) bySelector.set(s.selector, [])
-    bySelector.get(s.selector).push(s)
+    let pts = bySelector.get(s.selector)
+    if (!pts) {
+      pts = []
+      bySelector.set(s.selector, pts)
+    }
+    pts.push(s)
   }
   const boxes = [...bySelector.entries()].map(([selector, pts]) => {
-    const xs = pts.map((p) => p.x)
-    const ys = pts.map((p) => p.y)
+    const xs = pts.map((p) => p.x || 0)
+    const ys = pts.map((p) => p.y || 0)
     const pad = 1.5
     return {
       selector,
