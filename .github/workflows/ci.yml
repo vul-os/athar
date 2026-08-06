@@ -28,6 +28,14 @@ jobs:
       # down needs no npm step at all.
       - run: npm ci
 
+      # Type-aware ESLint (typescript-eslint recommendedTypeChecked via
+      # projectService) across the tracker, the dashboard's JSDoc-typed
+      # static JS, and the Node tooling scripts — unused vars, floating
+      # promises and import hygiene that a typecheck alone never catches.
+      # Hard failure, no continue-on-error.
+      - name: Lint
+        run: npm run lint
+
       # athar.ts is real TypeScript; a plain `npm run build:tracker` (esbuild)
       # would happily ship it even if it no longer typechecks, since esbuild
       # only strips types, it never checks them. This is the gate that
