@@ -14,8 +14,14 @@
  *     per-call.
  */
 
+/** @typedef {{ from: number, to: number }} DateRange */
+
 /** Thrown for any non-2xx response, carrying the server's message and status. */
 export class ApiError extends Error {
+  /**
+   * @param {number} status
+   * @param {string} message
+   */
   constructor(status, message) {
     super(message)
     this.name = 'ApiError'
@@ -23,6 +29,7 @@ export class ApiError extends Error {
   }
 }
 
+/** @returns {string} */
 function csrfToken() {
   const match = document.cookie.match(/(?:^|;\s*)athar_csrf=([^;]*)/)
   return match ? decodeURIComponent(match[1]) : ''
@@ -31,7 +38,14 @@ function csrfToken() {
 /** Fired when the server reports the session is gone, so the app can show sign-in. */
 export const SESSION_EXPIRED = 'athar:session-expired'
 
+/**
+ * @param {string} method
+ * @param {string} path
+ * @param {unknown} [body]
+ * @returns {Promise<unknown>}
+ */
 async function request(method, path, body) {
+  /** @type {Record<string, string>} */
   const headers = {}
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (method !== 'GET' && method !== 'HEAD') headers['X-Athar-CSRF'] = csrfToken()
@@ -71,8 +85,14 @@ async function request(method, path, body) {
   return payload
 }
 
+/** @param {string} path */
 const get = (path) => request('GET', path)
+/**
+ * @param {string} path
+ * @param {unknown} [body]
+ */
 const post = (path, body) => request('POST', path, body)
+/** @param {string} path */
 const del = (path) => request('DELETE', path)
 
 /**
@@ -83,6 +103,10 @@ const del = (path) => request('DELETE', path)
  * body that must NOT be stringified is exactly the kind of exception that
  * quietly rots a shared helper. Both paths still share the CSRF token and the
  * session-expiry broadcast, which are the parts that must never diverge.
+ * @param {string} path
+ * @param {Blob} blob
+ * @param {string} [contentType]
+ * @returns {Promise<unknown>}
  */
 async function putBytes(path, blob, contentType) {
   let res
@@ -109,11 +133,15 @@ async function putBytes(path, blob, contentType) {
   return payload
 }
 
-/** Serialises a query object, dropping empty values. */
+/**
+ * Serialises a query object, dropping empty values.
+ * @param {Record<string, string | number | null | undefined> | undefined} params
+ * @returns {string}
+ */
 function qs(params) {
   const search = new URLSearchParams()
   for (const [key, value] of Object.entries(params || {})) {
-    if (value !== undefined && value !== null && value !== '') search.set(key, value)
+    if (value !== undefined && value !== null && value !== '') search.set(key, String(value))
   }
   const str = search.toString()
   return str ? `?${str}` : ''
@@ -122,32 +150,86 @@ function qs(params) {
 /** The endpoints the dashboard actually calls. */
 export const api = {
   authStatus: () => get('/api/auth/status'),
+  /**
+   * @param {string} username
+   * @param {string} password
+   */
   login: (username, password) => post('/api/auth/login', { username, password }),
+  /**
+   * @param {string} username
+   * @param {string} password
+   */
   bootstrap: (username, password) => post('/api/auth/bootstrap', { username, password }),
   logout: () => post('/api/auth/logout'),
   me: () => get('/api/me'),
 
   websites: () => get('/api/websites'),
+  /**
+   * @param {string} name
+   * @param {string} domain
+   */
   createWebsite: (name, domain) => post('/api/websites', { name, domain }),
 
+  /**
+   * @param {string} id
+   * @param {DateRange} range
+   */
   stats: (id, range) => get(`/api/websites/${id}/stats${qs(range)}`),
+  /**
+   * @param {string} id
+   * @param {DateRange} range
+   */
   series: (id, range) => get(`/api/websites/${id}/series${qs(range)}`),
+  /**
+   * @param {string} id
+   * @param {string} metric
+   * @param {DateRange} range
+   * @param {number} [limit]
+   */
   metrics: (id, metric, range, limit = 8) =>
     get(`/api/websites/${id}/metrics${qs({ metric, limit, ...range })}`),
+  /** @param {string} id */
   active: (id) => get(`/api/websites/${id}/active`),
+  /**
+   * @param {string} id
+   * @param {string} path
+   * @param {string} kind
+   * @param {DateRange} range
+   */
   heatmap: (id, path, kind, range) =>
     get(`/api/websites/${id}/heatmap${qs({ path, kind, ...range })}`),
+  /**
+   * @param {string} id
+   * @param {DateRange} range
+   */
   revenue: (id, range) => get(`/api/websites/${id}/revenue${qs(range)}`),
 
   // Page images: the operator-supplied capture the click heatmap is drawn
   // over. pageImageURL is a URL builder rather than a fetch because the
   // consumer is an <img src>, which does its own conditional request against
   // the ETag the server sets.
+  /** @param {string} id */
   pageImages: (id) => get(`/api/websites/${id}/page-images`),
+  /**
+   * @param {string} id
+   * @param {string} path
+   * @param {string} viewport
+   */
   pageImageURL: (id, path, viewport) =>
     `/api/websites/${id}/page-image${qs({ path, viewport })}`,
+  /**
+   * @param {string} id
+   * @param {string} path
+   * @param {string} viewport
+   * @param {File} file
+   */
   putPageImage: (id, path, viewport, file) =>
     putBytes(`/api/websites/${id}/page-image${qs({ path, viewport })}`, file, file.type),
+  /**
+   * @param {string} id
+   * @param {string} path
+   * @param {string} viewport
+   */
   deletePageImage: (id, path, viewport) =>
     del(`/api/websites/${id}/page-image${qs({ path, viewport })}`),
 }
