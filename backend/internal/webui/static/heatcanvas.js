@@ -35,6 +35,7 @@
  * ramp's appeal is precisely that people already know it, and "correcting"
  * it makes it less recognisable, not more.
  */
+/** @type {Array<[number, [number, number, number]]>} */
 const STOPS = [
   [0.0, [40, 90, 210]], // blue — cold
   [0.3, [40, 190, 200]], // cyan
@@ -43,6 +44,10 @@ const STOPS = [
   [1.0, [225, 55, 45]], // red — hot
 ]
 
+/**
+ * @param {number} t
+ * @returns {[number, number, number]}
+ */
 function ramp(t) {
   const value = t <= 0 ? 0 : t >= 1 ? 1 : t
   for (let i = 1; i < STOPS.length; i++) {
@@ -60,16 +65,21 @@ function ramp(t) {
   return STOPS[STOPS.length - 1][1]
 }
 
+/** @typedef {{ x: number, y: number }} HeatPoint */
+
 /**
  * Mounts a heat canvas into `container` (which must already have a size —
  * absolute-positioned inset-0 over the wireframe frame, in practice) and
  * keeps it redrawn on resize. Returns { setSamples, destroy }.
+ * @param {HTMLElement} container
+ * @param {number} [radius]
  */
 export function mountHeatCanvas(container, radius) {
   const canvas = document.createElement('canvas')
   canvas.className = 'heat-canvas'
   container.appendChild(canvas)
 
+  /** @type {HeatPoint[]} */
   let samples = []
   let frame = 0
 
@@ -146,6 +156,7 @@ export function mountHeatCanvas(container, radius) {
   observer.observe(container)
 
   return {
+    /** @param {HeatPoint[] | null | undefined} next */
     setSamples(next) {
       samples = next || []
       draw()
