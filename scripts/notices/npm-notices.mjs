@@ -60,7 +60,10 @@ for (const pkgKey of Object.keys(pkgs).sort()) {
   const version = pkgKey.slice(at + 1);
   const licence = Array.isArray(info.licenses) ? info.licenses.join(' OR ') : info.licenses;
 
-  let text = null;
+  // No initializer: every path below either assigns a real value before
+  // out.push() reads it, or `continue`s the loop first — the `null` this
+  // used to start with was never actually observed.
+  let text;
   let source = '';
 
   const ov = findOverride(name, version);
