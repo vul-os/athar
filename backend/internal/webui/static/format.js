@@ -153,11 +153,14 @@ const DEFAULT_RANGE_SPEC = RANGES.find((r) => r.key === DEFAULT_RANGE_KEY) ?? RA
 
 const RANGE_STORAGE_KEY = 'athar-range'
 
-/** Reads the remembered range, falling back to the default. */
+/**
+ * Reads the remembered range, falling back to the default.
+ * @returns {string}
+ */
 export function storedRangeKey() {
   try {
     const value = localStorage.getItem(RANGE_STORAGE_KEY)
-    if (RANGES.some((r) => r.key === value)) return value
+    if (value && RANGES.some((r) => r.key === value)) return value
   } catch {
     // Private-browsing modes can throw; the default is fine.
   }
