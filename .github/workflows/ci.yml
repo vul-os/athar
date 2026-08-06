@@ -42,6 +42,13 @@ jobs:
       - name: Tracker build up to date
         run: node scripts/build-tracker.mjs --check
 
+      # backend/internal/webui/static/*.js are plain, unbundled JS served
+      # directly via go:embed (see webui/embed.go) — they stay .js, never
+      # renamed to .ts, but checkJs still typechecks them in place against
+      # their JSDoc annotations. Hard failure, same as the tracker gate.
+      - name: Dashboard checkJs
+        run: npm run typecheck:webui
+
       # format.js / countries.js are the dashboard's only real logic; this is
       # their test coverage (node:test, no vitest). The glob must actually
       # match files, so this cannot pass by silently running nothing.
