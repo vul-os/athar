@@ -21,6 +21,8 @@ import { bucketLabel, count } from './format.js'
  *     needing a third hue.
  */
 
+/** @typedef {{ t: number, pageviews: number, visitors: number }} ChartPoint */
+
 const MARGIN = { top: 12, right: 8, bottom: 24, left: 44 }
 const WIDTH = 800 // viewBox width; the SVG scales to its container
 const TICK_COUNT = 4
@@ -33,6 +35,8 @@ const STEP_CANDIDATES = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]
  * whose quarters are 12.5 and 37.5, and the axis ends up reading
  * 0 / 13 / 25 / 38 / 50. Rounding the *step* instead and multiplying by four
  * gives 0 / 10 / 20 / 30 / 40 — values someone would actually say out loud.
+ * @param {number} value
+ * @returns {number}
  */
 function niceCeiling(value) {
   if (value <= 4) return 4
@@ -48,7 +52,10 @@ function niceCeiling(value) {
   return magnitude * 10 * TICK_COUNT
 }
 
-/** Projects the series into SVG coordinates and derives the axes. */
+/**
+ * Projects the series into SVG coordinates and derives the axes.
+ * @param {{ points: ChartPoint[], comparison: ChartPoint[] | null | undefined, width: number, height: number, interval: string | undefined }} args
+ */
 function buildPlot({ points, comparison, width, height, interval }) {
   const innerW = width - MARGIN.left - MARGIN.right
   const innerH = height - MARGIN.top - MARGIN.bottom
@@ -60,7 +67,9 @@ function buildPlot({ points, comparison, width, height, interval }) {
   )
   const top = niceCeiling(peak)
 
+  /** @param {number} i */
   const x = (i) => MARGIN.left + (points.length > 1 ? (i / (points.length - 1)) * innerW : innerW / 2)
+  /** @param {number} value */
   const y = (value) => MARGIN.top + innerH - (value / top) * innerH
 
   const coords = points.map((p, i) => ({
@@ -69,6 +78,7 @@ function buildPlot({ points, comparison, width, height, interval }) {
     yVisitors: y(p.visitors),
   }))
 
+  /** @param {number[]} values */
   const line = (values) =>
     values.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(2)},${y(v).toFixed(2)}`).join(' ')
 
@@ -99,6 +109,9 @@ let gradientSeq = 0
  * Renders the chart into `container`, replacing whatever it held. Returns a
  * destroy() to remove listeners — callers rebuild wholesale on new data
  * rather than diffing, so lifecycle is just "call again with fresh props".
+ * @param {HTMLElement} container
+ * @param {{ points: ChartPoint[], comparison?: ChartPoint[] | null, interval: string | undefined, height?: number }} args
+ * @returns {() => void}
  */
 export function renderChart(container, { points, comparison, interval, height = 260 }) {
   clear(container)
@@ -188,16 +201,17 @@ export function renderChart(container, { points, comparison, interval, height = 
 
   const tooltip = el('div', { class: 'chart-tooltip', style: 'display:none' })
 
+  /** @param {number} index */
   function showHover(index) {
     const c = coords[index]
-    hoverLine.setAttribute('x1', c.x)
-    hoverLine.setAttribute('x2', c.x)
+    hoverLine.setAttribute('x1', String(c.x))
+    hoverLine.setAttribute('x2', String(c.x))
     hoverLine.style.display = ''
-    hoverDotViews.setAttribute('cx', c.x)
-    hoverDotViews.setAttribute('cy', c.y)
+    hoverDotViews.setAttribute('cx', String(c.x))
+    hoverDotViews.setAttribute('cy', String(c.y))
     hoverDotViews.style.display = ''
-    hoverDotVisitors.setAttribute('cx', c.x)
-    hoverDotVisitors.setAttribute('cy', c.yVisitors)
+    hoverDotVisitors.setAttribute('cx', String(c.x))
+    hoverDotVisitors.setAttribute('cy', String(c.yVisitors))
     hoverDotVisitors.style.display = ''
 
     const point = points[index]
@@ -245,6 +259,7 @@ export function renderChart(container, { points, comparison, interval, height = 
     tooltip.style.display = 'none'
   }
 
+  /** @param {number} clientX */
   function indexFromClientX(clientX) {
     const box = svg.getBoundingClientRect()
     const xInView = ((clientX - box.left) / box.width) * WIDTH
@@ -253,8 +268,10 @@ export function renderChart(container, { points, comparison, interval, height = 
     return Math.min(points.length - 1, Math.max(0, index))
   }
 
+  /** @param {MouseEvent} e */
   const onMove = (e) => showHover(indexFromClientX(e.clientX))
   const onLeave = () => hideHover()
+  /** @param {TouchEvent} e */
   const onTouch = (e) => {
     if (e.touches && e.touches[0]) showHover(indexFromClientX(e.touches[0].clientX))
   }
