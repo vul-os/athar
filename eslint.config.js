@@ -73,14 +73,18 @@ export default defineConfig([
 
   // Node tooling scripts: build/screenshot/site-check scripts and the
   // node:test suites. Untyped — no tsconfig covers this tree today, so
-  // there is no type information to resolve honestly.
+  // there is no type information to resolve honestly. Several of these
+  // (demo-capture, screenshots, site-check, site-screenshots) drive
+  // Playwright and pass `page.evaluate(() => document...)` callbacks —
+  // real code that runs in-page, in the same file as the Node driver code
+  // around it — so both global sets genuinely apply here, not just Node's.
   {
     files: ['scripts/**/*.mjs'],
     extends: [js.configs.recommended],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
-      globals: globals.node,
+      globals: { ...globals.node, ...globals.browser },
     },
   },
 ])
