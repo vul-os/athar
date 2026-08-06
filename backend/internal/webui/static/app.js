@@ -26,31 +26,64 @@ import { renderHeatmapSection } from './heatmap.js'
  * function's comment for what it corresponds to.
  */
 
-const root = document.getElementById('root')
+/** @typedef {{ id: string, name: string, domain?: string, access?: string }} Website */
+/** @typedef {{ username: string }} User */
+/** @typedef {{ authenticated: boolean, needs_setup?: boolean }} AuthStatus */
+/** @typedef {{ visitors: number, pageviews: number, visits: number, bounce_rate: number, avg_visit_seconds: number }} Stats */
+/** @typedef {{ points: import('./chart.js').ChartPoint[], interval: string }} SeriesResponse */
+/** @typedef {{ totals: Array<{ currency: string, amount_minor: number }> }} RevenueResponse */
+/** @typedef {{ active: number }} ActiveResponse */
+/** @typedef {{ rows: Array<{ value: string, count: number }> }} MetricsResponse */
+
+/** @typedef {{ boot: 'loading' }} BootLoading */
+/** @typedef {{ boot: 'signed-out', needsSetup: boolean }} BootSignedOut */
+/** @typedef {{ boot: 'error', message: string }} BootErrorState */
+/** @typedef {{ boot: 'ready', user: User, websites: Website[], selectedId: string | null, rangeKey: string }} BootReady */
+/** @typedef {BootLoading | BootSignedOut | BootErrorState | BootReady} AppState */
+
+// index.html's #root is asserted present by embed_test.go
+// (TestEmbeddedHTMLHasRequiredElements); this is the one place that fact
+// becomes a type rather than a null check repeated at every call site.
+const root = /** @type {HTMLElement} */ (document.getElementById('root'))
 const theme = createThemeController()
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 
+/** @type {AppState} */
 let state = { boot: 'loading' }
+
+/**
+ * A caught value's type is `unknown`, not Error — ApiError (thrown by
+ * every api.* call) is checked first since it carries the server's actual
+ * message; a plain Error covers a network/parse failure; anything else
+ * (a thrown string, etc.) falls back to String().
+ * @param {unknown} err
+ * @returns {string}
+ */
+function errorMessage(err) {
+  if (err instanceof ApiError || err instanceof Error) return err.message
+  return String(err)
+}
 
 async function boot() {
   try {
-    const status = await api.authStatus()
+    const status = /** @type {AuthStatus} */ (await api.authStatus())
     if (status.authenticated) {
-      const user = await api.me()
+      const user = /** @type {User} */ (await api.me())
       const websites = await loadWebsites()
       state = { boot: 'ready', user, websites, selectedId: websites[0] ? websites[0].id : null, rangeKey: storedRangeKey() }
     } else {
-      state = { boot: 'signed-out', needsSetup: status.needs_setup }
+      state = { boot: 'signed-out', needsSetup: status.needs_setup || false }
     }
   } catch (err) {
-    state = { boot: 'error', message: err instanceof ApiError ? err.message : String((err && err.message) || err) }
+    state = { boot: 'error', message: errorMessage(err) }
   }
   paint()
 }
 
+/** @returns {Promise<Website[]>} */
 async function loadWebsites() {
-  return api.websites()
+  return /** @type {Promise<Website[]>} */ (api.websites())
 }
 
 window.addEventListener(SESSION_EXPIRED, () => {
@@ -96,6 +129,11 @@ boot()
 // Port of Login.jsx: which mode this is in comes from the server
 // (needs_setup), never guessed client-side.
 
+/**
+ * @param {boolean} needsSetup
+ * @param {(user: User) => Promise<void>} onSignedIn
+ * @returns {HTMLElement}
+ */
 function renderLogin(needsSetup, onSignedIn) {
   let busy = false
 
@@ -107,7 +145,9 @@ function renderLogin(needsSetup, onSignedIn) {
   const confirmField = needsSetup ? field('Confirm password', 'password', { autocomplete: 'new-password' }) : null
 
   const errorBox = el('p', { class: 'form-error', role: 'alert', style: 'display:none' })
-  const submitBtn = el('button', { type: 'submit', class: 'btn btn-primary btn-block' }, needsSetup ? 'Create account' : 'Sign in')
+  const submitBtn = /** @type {HTMLButtonElement} */ (
+    el('button', { type: 'submit', class: 'btn btn-primary btn-block' }, needsSetup ? 'Create account' : 'Sign in')
+  )
 
   const form = el(
     'form',
@@ -125,7 +165,7 @@ function renderLogin(needsSetup, onSignedIn) {
 
     const username = usernameField.input.value
     const password = passwordField.input.value
-    if (needsSetup && password !== confirmField.input.value) {
+    if (needsSetup && confirmField && password !== confirmField.input.value) {
       errorBox.textContent = 'Passwords do not match'
       errorBox.style.display = ''
       return
@@ -135,7 +175,9 @@ function renderLogin(needsSetup, onSignedIn) {
     submitBtn.disabled = true
     submitBtn.textContent = 'Working…'
     try {
-      const user = needsSetup ? await api.bootstrap(username, password) : await api.login(username, password)
+      const user = /** @type {User} */ (
+        needsSetup ? await api.bootstrap(username, password) : await api.login(username, password)
+      )
       await onSignedIn(user)
     } catch (err) {
       errorBox.textContent = err instanceof ApiError ? err.message : 'Something went wrong'
@@ -171,15 +213,23 @@ function renderLogin(needsSetup, onSignedIn) {
   )
 }
 
+/**
+ * @param {string} label
+ * @param {string} type
+ * @param {{ autocomplete?: string | null, autofocus?: boolean, hint?: string | null }} [opts]
+ * @returns {{ row: HTMLElement, input: HTMLInputElement }}
+ */
 function field(label, type, opts) {
   opts = opts || {}
-  const input = el('input', {
-    type,
-    required: true,
-    class: 'text-input',
-    autocomplete: opts.autocomplete || null,
-    autofocus: opts.autofocus || false,
-  })
+  const input = /** @type {HTMLInputElement} */ (
+    el('input', {
+      type,
+      required: true,
+      class: 'text-input',
+      autocomplete: opts.autocomplete || null,
+      autofocus: opts.autofocus || false,
+    })
+  )
   const row = el(
     'label',
     { class: 'field' },
@@ -193,7 +243,14 @@ function field(label, type, opts) {
 // ── Dashboard shell ───────────────────────────────────────────────────────────
 // Port of App.jsx's post-boot render + Header().
 
+/** @returns {HTMLElement} */
 function renderDashboard() {
+  // renderDashboard is only ever called while state.boot === 'ready' (see
+  // paint()) — this makes that invariant explicit for the type checker
+  // instead of narrowing `state` itself, which a nested closure like
+  // paintMain() below can't do across the function boundary.
+  const s = /** @type {BootReady} */ (state)
+
   const wrap = el('div', { class: 'app-shell' })
   const header = el('header', { class: 'topbar' })
   const topbarInner = el('div', { class: 'wrap topbar-inner' })
@@ -201,14 +258,17 @@ function renderDashboard() {
 
   topbarInner.appendChild(el('span', { class: 'brand' }, logoMark(28), el('span', { class: 'brand-word' }, 'Athar')))
 
-  const websites = state.websites
+  const websites = s.websites
+  /** @type {HTMLSelectElement | null} */
   let websiteSelect = null
   if (websites.length > 0) {
-    websiteSelect = el('select', { class: 'select topbar-select', 'aria-label': 'Website' })
+    websiteSelect = /** @type {HTMLSelectElement} */ (
+      el('select', { class: 'select topbar-select', 'aria-label': 'Website' })
+    )
     for (const site of websites) websiteSelect.appendChild(el('option', { value: site.id }, site.name))
-    websiteSelect.value = state.selectedId || websites[0].id
+    websiteSelect.value = s.selectedId || websites[0].id
     websiteSelect.addEventListener('change', () => {
-      state.selectedId = websiteSelect.value
+      s.selectedId = /** @type {HTMLSelectElement} */ (websiteSelect).value
       paintMain()
     })
     topbarInner.appendChild(websiteSelect)
@@ -227,9 +287,9 @@ function renderDashboard() {
         'button',
         {
           type: 'button',
-          class: 'segmented-btn' + (r.key === state.rangeKey ? ' is-active' : ''),
+          class: 'segmented-btn' + (r.key === s.rangeKey ? ' is-active' : ''),
           onclick: () => {
-            state.rangeKey = r.key
+            s.rangeKey = r.key
             persistRangeKey(r.key)
             for (const btn of rangeBar.children) btn.classList.remove('is-active')
             paintMain()
@@ -255,7 +315,7 @@ function renderDashboard() {
     {
       type: 'button',
       class: 'btn btn-ghost',
-      title: `Signed in as ${state.user.username}`,
+      title: `Signed in as ${s.user.username}`,
       onclick: async () => {
         try {
           await api.logout()
@@ -284,7 +344,9 @@ function renderDashboard() {
     ),
   )
 
+  /** @type {(() => void) | null} */
   let activeVisitorsStop = null
+  /** @type {(() => void) | null} */
   let overviewStop = null
 
   function paintMain() {
@@ -292,14 +354,14 @@ function renderDashboard() {
     if (overviewStop) overviewStop()
     clear(main)
 
-    const selected = websites.find((w) => w.id === state.selectedId) || null
+    const selected = websites.find((w) => w.id === s.selectedId) || null
 
     if (websites.length === 0) {
       main.appendChild(
         renderAddWebsite((site) => {
-          state.websites = [site]
+          s.websites = [site]
           websites.push(site)
-          state.selectedId = site.id
+          s.selectedId = site.id
           // Rebuild the whole shell: the header needs a website select now.
           replace(root, renderDashboard())
         }),
@@ -311,7 +373,7 @@ function renderDashboard() {
 
     activeVisitorsStop = mountActiveVisitors(activeSlot, selected.id)
 
-    const range = rangeFor(state.rangeKey)
+    const range = rangeFor(s.rangeKey)
     overviewStop = renderOverview(main, selected, range)
   }
 
@@ -319,6 +381,7 @@ function renderDashboard() {
   return wrap
 }
 
+/** @param {HTMLElement} btn */
 function updateThemeButton(btn) {
   const pref = theme.preference
   const label = pref === 'light' ? 'Light' : pref === 'dark' ? 'Dark' : 'System'
@@ -328,6 +391,10 @@ function updateThemeButton(btn) {
   btn.appendChild(themeIcon(pref))
 }
 
+/**
+ * @param {import('./theme.js').Preference} pref
+ * @returns {SVGElement}
+ */
 function themeIcon(pref) {
   const common = { width: 15, height: 15, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' }
   if (pref === 'light') {
@@ -343,6 +410,10 @@ function themeIcon(pref) {
     svgEl('path', { d: 'M8 21h8M12 17v4' }))
 }
 
+/**
+ * @param {number} size
+ * @returns {SVGElement}
+ */
 function logoMark(size) {
   return svgEl(
     'svg',
@@ -354,15 +425,21 @@ function logoMark(size) {
   )
 }
 
-/** Realtime "N now" readout, polled while the tab is visible. Port of App.jsx's ActiveVisitors. */
+/**
+ * Realtime "N now" readout, polled while the tab is visible. Port of App.jsx's ActiveVisitors.
+ * @param {HTMLElement} slot
+ * @param {string} websiteId
+ * @returns {() => void}
+ */
 function mountActiveVisitors(slot, websiteId) {
   let stopped = false
+  /** @type {ReturnType<typeof setInterval> | null} */
   let timer = null
 
   async function poll() {
     if (document.visibilityState !== 'visible') return
     try {
-      const res = await api.active(websiteId)
+      const res = /** @type {ActiveResponse} */ (await api.active(websiteId))
       if (stopped) return
       clear(slot)
       slot.style.display = ''
@@ -388,12 +465,19 @@ function mountActiveVisitors(slot, websiteId) {
 
 // ── Add website (first-run empty state) ──────────────────────────────────────
 
+/** @param {(site: Website) => void} onCreated */
 function renderAddWebsite(onCreated) {
   let busy = false
-  const nameInput = el('input', { class: 'text-input', placeholder: 'My site', required: true, autofocus: true })
-  const domainInput = el('input', { class: 'text-input', placeholder: 'example.com', required: true })
+  const nameInput = /** @type {HTMLInputElement} */ (
+    el('input', { class: 'text-input', placeholder: 'My site', required: true, autofocus: true })
+  )
+  const domainInput = /** @type {HTMLInputElement} */ (
+    el('input', { class: 'text-input', placeholder: 'example.com', required: true })
+  )
   const errorBox = el('p', { class: 'form-error', style: 'display:none' })
-  const submitBtn = el('button', { type: 'submit', class: 'btn btn-primary btn-block' }, 'Create website')
+  const submitBtn = /** @type {HTMLButtonElement} */ (
+    el('button', { type: 'submit', class: 'btn btn-primary btn-block' }, 'Create website')
+  )
 
   const form = el(
     'form',
@@ -411,7 +495,7 @@ function renderAddWebsite(onCreated) {
     submitBtn.disabled = true
     submitBtn.textContent = 'Creating…'
     try {
-      const site = await api.createWebsite(nameInput.value, domainInput.value)
+      const site = /** @type {Website} */ (await api.createWebsite(nameInput.value, domainInput.value))
       onCreated(site)
     } catch (err) {
       errorBox.textContent = err instanceof ApiError ? err.message : String(err)
@@ -431,6 +515,7 @@ function renderAddWebsite(onCreated) {
   )
 }
 
+/** @param {Website} website */
 function renderSnippet(website) {
   const tag = `<script defer src="${window.location.origin}/athar.js" data-website-id="${website.id}"></script>`
   const copyBtn = el('button', { type: 'button', class: 'btn btn-ghost btn-sm' }, 'Copy')
@@ -461,8 +546,15 @@ function renderSnippet(website) {
 // tears down live widgets (the heat canvas's ResizeObserver) when the
 // caller replaces this section.
 
+/**
+ * @param {HTMLElement} main
+ * @param {Website} website
+ * @param {import('./api.js').DateRange} range
+ * @returns {() => void}
+ */
 function renderOverview(main, website, range) {
   let stopped = false
+  /** @type {{ destroy(): void } | null} */
   let heatmapHandle = null
 
   const statGrid = el('div', { class: 'stat-grid' })
@@ -495,13 +587,15 @@ function renderOverview(main, website, range) {
     const span = range.to - range.from
     const previousRange = { from: range.from - span, to: range.from }
     try {
-      const [stats, series, revenue, previousStats, previousSeries] = await Promise.all([
-        api.stats(website.id, range),
-        api.series(website.id, range),
-        api.revenue(website.id, range),
-        api.stats(website.id, previousRange),
-        api.series(website.id, previousRange),
-      ])
+      const [stats, series, revenue, previousStats, previousSeries] = /** @type {[Stats, SeriesResponse, RevenueResponse, Stats, SeriesResponse]} */ (
+        await Promise.all([
+          api.stats(website.id, range),
+          api.series(website.id, range),
+          api.revenue(website.id, range),
+          api.stats(website.id, previousRange),
+          api.series(website.id, previousRange),
+        ])
+      )
       if (stopped) return
 
       const views = (series.points || []).map((p) => p.pageviews)
@@ -584,7 +678,17 @@ function renderOverview(main, website, range) {
   }
 }
 
-/** A headline metric tile: value, delta vs the previous period, sparkline. */
+/**
+ * A headline metric tile: value, delta vs the previous period, sparkline.
+ * @param {string} label
+ * @param {string | null} value
+ * @param {number | null} current
+ * @param {boolean} [accent]
+ * @returns {{
+ *   node: HTMLElement,
+ *   update(formatted: string | null | undefined, currentVal: number | undefined, previousVal: number | null | undefined, series: number[] | null, invert: boolean): void,
+ * }}
+ */
 function statTile(label, value, current, accent) {
   const labelEl = el('span', { class: 'stat-label' }, label)
   const deltaEl = el('span', { class: 'stat-delta', style: 'display:none' })
@@ -616,6 +720,11 @@ function statTile(label, value, current, accent) {
   }
 }
 
+/**
+ * @param {number[]} values
+ * @param {boolean} [accent]
+ * @returns {SVGElement}
+ */
 function sparkline(values, accent) {
   const width = 64
   const height = 22
@@ -635,9 +744,19 @@ function sparkline(values, accent) {
  * A "top N" breakdown panel. Port of MetricPanel.jsx: bars proportional to
  * the leader (not the total, since the list is truncated), share computed
  * against the API's true total so the percentage stays honest regardless.
+ * @param {{
+ *   websiteId: string,
+ *   range: import('./api.js').DateRange,
+ *   title: string,
+ *   tabs: Array<{ metric: string, label: string }> | null,
+ *   emptyLabel?: string,
+ *   fixedMetric?: string,
+ * }} args
+ * @returns {{ node: HTMLElement }}
  */
 function mountMetricPanel({ websiteId, range, title, tabs, emptyLabel, fixedMetric }) {
-  let metric = fixedMetric || (tabs && tabs[0].metric)
+  /** @type {string} */
+  let metric = fixedMetric || (tabs && tabs[0] ? tabs[0].metric : '')
   let gen = 0
 
   const tabBar = tabs ? el('div', { class: 'segmented segmented-sm' }) : null
@@ -646,7 +765,7 @@ function mountMetricPanel({ websiteId, range, title, tabs, emptyLabel, fixedMetr
   const node = el('section', { class: 'panel metric-panel' }, header, body)
 
   function paintTabs() {
-    if (!tabBar) return
+    if (!tabBar || !tabs) return
     clear(tabBar)
     for (const t of tabs) {
       tabBar.appendChild(
@@ -673,7 +792,7 @@ function mountMetricPanel({ websiteId, range, title, tabs, emptyLabel, fixedMetr
     clear(body)
     body.appendChild(el('p', { class: 'metric-message' }, 'Loading…'))
     try {
-      const data = await api.metrics(websiteId, metric, range, 8)
+      const data = /** @type {MetricsResponse | null} */ (await api.metrics(websiteId, metric, range, 8))
       if (myGen !== gen) return
       const rows = (data && data.rows) || []
       clear(body)
