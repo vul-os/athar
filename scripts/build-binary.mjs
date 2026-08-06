@@ -17,7 +17,7 @@
  * builds.
  *
  * Run `npm run build:tracker` first (or `npm run build`, which does both) so
- * the embedded tracker script reflects any edits to athar.js.
+ * the embedded tracker script reflects any edits to athar.ts.
  */
 
 import { rmSync, cpSync, mkdirSync } from 'node:fs'
