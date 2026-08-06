@@ -163,7 +163,7 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
               kind = m.kind
               paintModeBar()
               blurb.textContent = m.blurb
-              loadHeat()
+              void loadHeat()
             },
           },
           m.label,
@@ -207,12 +207,12 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
     } catch {
       path = null
     }
-    loadHeat()
+    void loadHeat()
   }
   pageSelect.addEventListener('change', () => {
     path = pageSelect.value
     viewportBucket = null
-    loadHeat()
+    void loadHeat()
   })
 
   async function loadHeat() {
@@ -456,6 +456,7 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
 
       clickCountEl.textContent = `${count(samples.length)} clicks`
 
+      /** @type {Map<string, number>} */
       const counts = new Map()
       for (const s of samples) {
         if (!s.selector) continue
@@ -494,7 +495,11 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
         suggestedWidth: meanW || (bucket ? bucket.label : 0),
         onChanged: async () => {
           await loadPageImages()
-          loadHeat()
+          // onChanged's own contract is `() => Promise<void>` and both call
+          // sites (upload/delete below) await it — awaiting here too means
+          // the caller's disabled/status-text state actually reflects when
+          // the reload finished, not just when it started.
+          await loadHeat()
         },
       })
     }
@@ -562,7 +567,9 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
    * @param {HeatSample[]} samples
    */
   function renderAttention(root, samples) {
+    /** @type {number[]} */
     const totals = new Array(10).fill(0)
+    /** @type {number[]} */
     const counts = new Array(10).fill(0)
     for (const s of samples) {
       const index = Math.min(9, Math.max(0, Math.floor((s.scroll || 0) / 10)))
@@ -607,7 +614,10 @@ export function renderHeatmapSection(container, { api, websiteId, range, canWrit
 
   paintModeBar()
   blurb.textContent = MODES[0].blurb
-  loadPageImages().then(loadPages)
+  // Nothing awaits renderHeatmapSection's caller; both loadPageImages and
+  // loadPages already swallow their own failures internally (see their
+  // try/catch bodies above), so there's nothing a .catch here would add.
+  void loadPageImages().then(loadPages)
 
   return {
     destroy() {
@@ -707,36 +717,39 @@ function renderCapturePanel(slot, { api, websiteId, canWrite, path, image, bucke
     })
   )
 
+  async function uploadCapture() {
+    const file = fileInput.files && fileInput.files[0]
+    if (!file) {
+      status.textContent = 'Choose a PNG or JPEG first.'
+      status.className = 'capture-feedback is-error'
+      return
+    }
+    const vw = Number(widthInput.value)
+    if (!Number.isFinite(vw) || vw < 200 || vw > 8000) {
+      status.textContent = 'Viewport width must be between 200 and 8000 CSS pixels.'
+      status.className = 'capture-feedback is-error'
+      return
+    }
+    uploadBtn.disabled = true
+    status.textContent = 'Uploading…'
+    status.className = 'capture-feedback'
+    try {
+      await api.putPageImage(websiteId, path, vw, file)
+      await onChanged()
+    } catch (err) {
+      uploadBtn.disabled = false
+      status.textContent = errorMessage(err) || 'Upload failed.'
+      status.className = 'capture-feedback is-error'
+    }
+  }
   const uploadBtn = /** @type {HTMLButtonElement} */ (
     el(
       'button',
       {
         type: 'button',
         class: 'btn btn-primary btn-sm',
-        onclick: async () => {
-          const file = fileInput.files && fileInput.files[0]
-          if (!file) {
-            status.textContent = 'Choose a PNG or JPEG first.'
-            status.className = 'capture-feedback is-error'
-            return
-          }
-          const vw = Number(widthInput.value)
-          if (!Number.isFinite(vw) || vw < 200 || vw > 8000) {
-            status.textContent = 'Viewport width must be between 200 and 8000 CSS pixels.'
-            status.className = 'capture-feedback is-error'
-            return
-          }
-          uploadBtn.disabled = true
-          status.textContent = 'Uploading…'
-          status.className = 'capture-feedback'
-          try {
-            await api.putPageImage(websiteId, path, vw, file)
-            await onChanged()
-          } catch (err) {
-            uploadBtn.disabled = false
-            status.textContent = errorMessage(err) || 'Upload failed.'
-            status.className = 'capture-feedback is-error'
-          }
+        onclick: () => {
+          void uploadCapture()
         },
       },
       image ? 'Replace capture' : 'Upload capture',
@@ -755,22 +768,26 @@ function renderCapturePanel(slot, { api, websiteId, canWrite, path, image, bucke
   panel.appendChild(status)
 
   if (image) {
+    const capturedImage = image
+    async function removeCapture() {
+      status.textContent = 'Removing…'
+      status.className = 'capture-feedback'
+      try {
+        await api.deletePageImage(websiteId, path, capturedImage.viewport_w)
+        await onChanged()
+      } catch (err) {
+        status.textContent = errorMessage(err) || 'Could not remove the capture.'
+        status.className = 'capture-feedback is-error'
+      }
+    }
     panel.appendChild(
       el(
         'button',
         {
           type: 'button',
           class: 'btn btn-sm capture-remove',
-          onclick: async () => {
-            status.textContent = 'Removing…'
-            status.className = 'capture-feedback'
-            try {
-              await api.deletePageImage(websiteId, path, image.viewport_w)
-              await onChanged()
-            } catch (err) {
-              status.textContent = errorMessage(err) || 'Could not remove the capture.'
-              status.className = 'capture-feedback is-error'
-            }
+          onclick: () => {
+            void removeCapture()
           },
         },
         'Remove capture',
