@@ -28,10 +28,18 @@ jobs:
       # down needs no npm step at all.
       - run: npm ci
 
-      # The minified tracker (backend/internal/tracker/athar.min.js) is
-      # committed, not generated at build time. Fail if it has drifted from
-      # athar.js so the two can never silently disagree.
-      - name: Tracker up to date
+      # athar.ts is real TypeScript; a plain `npm run build:tracker` (esbuild)
+      # would happily ship it even if it no longer typechecks, since esbuild
+      # only strips types, it never checks them. This is the gate that
+      # actually enforces the types mean something — hard failure, no
+      # continue-on-error.
+      - name: Tracker typecheck
+        run: npm run typecheck
+
+      # The committed athar.js / athar.min.js (backend/internal/tracker/) are
+      # generated, not hand-written. Fail if either has drifted from athar.ts
+      # so the three can never silently disagree.
+      - name: Tracker build up to date
         run: node scripts/build-tracker.mjs --check
 
       # format.js / countries.js are the dashboard's only real logic; this is
