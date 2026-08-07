@@ -201,6 +201,12 @@ code,.mono{font-family:var(--mono);font-variant-numeric:tabular-nums lining-nums
 
 .wrap{width:100%;max-width:var(--max);margin:0 auto;padding:0 28px;position:relative;z-index:1}
 @media(max-width:560px){.wrap{padding:0 18px}}
+/* At 320 the four action items are 44px each with 8px gaps — 200px, which with
+   the brand and the padding runs 8px past the edge and scrolls the whole page
+   sideways. The GitHub link goes: the repository is linked from the footer as
+   well, so it is the only item here that is duplicated. Docs and the theme
+   toggle are not. */
+@media(max-width:380px){.nav-act .ghlink[href^="http"]{display:none}}
 
 .skip{
   position:absolute;left:14px;top:-70px;z-index:200;padding:11px 18px;border-radius:8px;
